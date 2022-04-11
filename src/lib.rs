@@ -1,1 +1,1 @@
-pub mod txt_reader;
+pub mod from_txt;
