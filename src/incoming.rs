@@ -1,3 +1,6 @@
+use crate::from_txt::{FromTxt, TxtReader};
+
+#[derive(Debug, Default)]
 pub struct Incoming {
     客户号: String,
     日期: String,
@@ -33,4 +36,93 @@ pub struct Incoming {
     回单验证码: String,
     打印时间: String,
     打印次数: String,
+}
+impl<P: AsRef<std::path::Path>> FromTxt<'_, P> for Incoming {
+    type Filter = Filter;
+
+    fn filter(line: &str) -> Self::Filter {
+        match line {
+            _ => Filter::KNOWN(line.to_string()),
+        }
+    }
+
+    fn handler(filter: Self::Filter, target: &mut Self) {
+        match filter {
+            Filter::客户号(s) => todo!(),
+            Filter::日期(s) => todo!(),
+            Filter::收款人账号(_) => todo!(),
+            Filter::付款人账号(_) => todo!(),
+            Filter::收款人名称(_) => todo!(),
+            Filter::付款人名称(_) => todo!(),
+            Filter::收款人开户行(_) => todo!(),
+            Filter::付款人开户行(_) => todo!(),
+            Filter::金额(_) => todo!(),
+            Filter::金额大写(_) => todo!(),
+            Filter::报文种类(_) => todo!(),
+            Filter::业务类型(_) => todo!(),
+            Filter::收支申报号(_) => todo!(),
+            Filter::业务标识号(_) => todo!(),
+            Filter::业务编号(_) => todo!(),
+            Filter::发起行行号(_) => todo!(),
+            Filter::接收行行号(_) => todo!(),
+            Filter::发起行名称(_) => todo!(),
+            Filter::接收行名称(_) => todo!(),
+            Filter::入账账号(_) => todo!(),
+            Filter::入账户名(_) => todo!(),
+            Filter::用途(_) => todo!(),
+            Filter::附言(_) => todo!(),
+            Filter::交易机构(_) => todo!(),
+            Filter::交易渠道(_) => todo!(),
+            Filter::交易流水号(_) => todo!(),
+            Filter::经办(_) => todo!(),
+            Filter::回单编号(_) => todo!(),
+            Filter::回单验证码(_) => todo!(),
+            Filter::打印时间(_) => todo!(),
+            Filter::打印次数(_) => todo!(),
+            Filter::业务种类(_) => todo!(),
+            Filter::凭证号码(_) => todo!(),
+            Filter::备注(_) => todo!(),
+            Filter::UNUSEABLE(_) => todo!(),
+            Filter::KNOWN(_) => todo!(),
+        }
+    }
+}
+impl<P: AsRef<std::path::Path>> TxtReader<P> for Incoming {}
+pub enum Filter {
+    客户号(String),
+    日期(String),
+    收款人账号(String),
+    付款人账号(String),
+    收款人名称(String),
+    付款人名称(String),
+    收款人开户行(String),
+    付款人开户行(String),
+    金额(String),
+    金额大写(String),
+    报文种类(String),
+    业务类型(String),
+    收支申报号(String),
+    业务标识号(String),
+    业务编号(String),
+    发起行行号(String),
+    接收行行号(String),
+    发起行名称(String),
+    接收行名称(String),
+    入账账号(String),
+    入账户名(String),
+    用途(String),
+    附言(String),
+    交易机构(String),
+    交易渠道(String),
+    交易流水号(String),
+    经办(String),
+    回单编号(String),
+    回单验证码(String),
+    打印时间(String),
+    打印次数(String),
+    业务种类(String),
+    凭证号码(String),
+    备注(String),
+    UNUSEABLE(String),
+    KNOWN(String),
 }
