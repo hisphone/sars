@@ -1,8 +1,11 @@
 [package]
+edition = "2021"
 name = "sub_account_reconcile_system"
 version = "0.1.0"
-edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0.56"
+encoding = "0.2.33"
+log = "0.4.16"
