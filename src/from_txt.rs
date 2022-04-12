@@ -27,22 +27,9 @@ pub trait TxtReader<P: AsRef<Path>> {
 pub trait FromTxt<P>: TxtReader<P>
 where
     P: AsRef<Path>,
-    Self: Sized + Default,
+    Self: FromStr,
+    <Self as FromStr>::Err: std::error::Error + Send + Sync + 'static,
 {
-    type TxtFilter: FromStr<Err = Self::TxtFilterErr>;
-    type TxtFilterErr: std::error::Error + Send + Sync + 'static;
-
-    fn from_str(context: &str) -> Result<Self> {
-        let mut target = Self::default();
-        for line in context.lines().rev() {
-            Self::handler(Self::filter(line)?, &mut target)?;
-        }
-        Ok(target)
-    }
-    fn filter(line: &str) -> Result<Self::TxtFilter> {
-        Ok(Self::TxtFilter::from_str(line)?)
-    }
-    fn handler(filter: Self::TxtFilter, target: &mut Self) -> Result<()>;
     fn from_txt(path: P) -> Result<Self> {
         Ok(Self::from_str(&Self::auto_read(path)?)?)
     }
