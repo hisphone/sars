@@ -8,3 +8,4 @@ version = "0.1.0"
 [dependencies]
 anyhow = "1.0.56"
 encoding = "0.2.33"
+thiserror = "1.0.30"

@@ -1,51 +1,50 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use encoding::{all::GB18030, DecoderTrap, Encoding};
-use std::{io::Read, path::Path};
+use std::{io::Read, path::Path, str::FromStr};
 
 pub trait TxtReader<P: AsRef<Path>> {
     fn auto_read(path: P) -> Result<String> {
-        println!("开始自动读取，{:?}", path.as_ref());
-        Self::utf8_read(&path).or_else(|_| {
-            println!("utf8解码失败");
-            Self::gb18030_read(&path)
-        })
+        Self::utf8_read(&path)
+            .or_else(|_| Self::gb18030_read(&path))
+            .with_context(|| "ERROR:未知编码方式")
     }
     fn utf8_read(path: &P) -> Result<String> {
-        println!("开始按utf-8解码，{:?}", path.as_ref());
         let mut file = std::fs::File::open(path)?;
         let mut context = String::new();
         file.read_to_string(&mut context)?;
         Ok(context)
     }
     fn gb18030_read(path: &P) -> Result<String> {
-        println!("开始按GB18030解码，{:?}", path.as_ref());
         let mut file = std::fs::File::open(path)?;
         let mut buf = Vec::new();
         file.read_to_end(&mut buf)?;
         GB18030
             .decode(&buf, DecoderTrap::Strict)
-            .map_err(|_| anyhow::Error::msg("ERROR:未知编码方式"))
+            .map_err(|_| anyhow::Error::msg("ERROR:GB18030读取失败"))
     }
 }
-pub trait FromTxt<'a, P: AsRef<Path>>: TxtReader<P>
+
+pub trait FromTxt<P>: TxtReader<P>
 where
+    P: AsRef<Path>,
     Self: Sized + Default,
 {
-    type Filter;
-    fn from_str(context: String) -> Result<Self> {
+    type TxtFilter: FromStr<Err = Self::TxtFilterErr>;
+    type TxtFilterErr: std::error::Error + Send + Sync + 'static;
+
+    fn from_str(context: &str) -> Result<Self> {
         let mut target = Self::default();
-        context
-            .lines()
-            .rev()
-            .for_each(|line| match Self::filter(line) {
-                Filter => Self::handler(Self::filter(line), &mut target),
-            });
+        for line in context.lines().rev() {
+            Self::handler(Self::filter(line)?, &mut target)?;
+        }
         Ok(target)
     }
-    fn filter(line: &str) -> Self::Filter;
-    fn handler(filter: Self::Filter, target: &mut Self);
+    fn filter(line: &str) -> Result<Self::TxtFilter> {
+        Ok(Self::TxtFilter::from_str(line)?)
+    }
+    fn handler(filter: Self::TxtFilter, target: &mut Self) -> Result<()>;
     fn from_txt(path: P) -> Result<Self> {
-        Ok(Self::from_str(Self::auto_read(path)?)?)
+        Ok(Self::from_str(&Self::auto_read(path)?)?)
     }
 }
 

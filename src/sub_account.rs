@@ -1,4 +1,8 @@
-struct SubAccount {
+use crate::{
+    balance::Balances, incoming::Incomings, outgoing::Outgoings, refund::Refunds, start::Starts,
+};
+
+pub struct SubAccount {
     info: SubInfos,
     start: Starts,
     incoming: Incomings,
@@ -7,16 +11,6 @@ struct SubAccount {
     balance: Balances,
 }
 
-type SubInfos = Vec<SubInfo>;
-type Starts = Vec<Start>;
-type Incomings = Vec<Incoming>;
-type Outgoings = Vec<Outgoing>;
-type Balances = Vec<Balance>;
-type Refunds = Vec<Refund>;
+pub type SubInfos = Vec<SubInfo>;
 
-struct SubInfo;
-struct Start;
-struct Incoming;
-struct Outgoing;
-struct Balance;
-struct Refund;
+pub struct SubInfo;
