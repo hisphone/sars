@@ -1,6 +1,6 @@
-use sub_account_reconcile_system::{from_txt::FromTxt, incoming::Incomings};
+use sub_account_reconcile_system::{balance::Balances, from_txt::FromTxt};
 
 fn main() {
-    let a = Incomings::from_txt("王静.txt").unwrap();
+    let a = Balances::from_txt("王静 copy.txt").unwrap();
     println!("{a:#?}")
 }
