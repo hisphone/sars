@@ -80,12 +80,12 @@ impl FromStr for Balances {
                 if lines[1].is_empty() && lines[2].is_empty() {
                     temp = lines[0].to_string()
                 } else if temp.is_empty() {
-                    balances[index].set_虚拟账号(lines[0].to_string());
+                    balances[index].set_虚拟账号(lines[0].strip_prefix("102831264647").unwrap().to_string());
                     balances[index].set_虚拟账户名称(lines[1].to_string());
                     balances[index].set_自有额度(lines[2].parse().unwrap());
                     index += 1;
                 } else {
-                    balances[index].set_虚拟账号(lines[0].to_string() + &temp);
+                    balances[index].set_虚拟账号(lines[0].strip_prefix("102831264647").unwrap().to_string() + &temp);
                     balances[index].set_虚拟账户名称(lines[1].to_string());
                     balances[index].set_自有额度(lines[2].parse().unwrap());
                     index += 1;
@@ -99,13 +99,13 @@ impl FromStr for Balances {
 
 #[derive(Debug, Default, Clone)]
 pub struct Balance {
-    虚拟账号: String,
+    id: String,
     虚拟账户名称: String,
     自有额度: f64,
 }
 impl Balance {
     pub fn set_虚拟账号(&mut self, setter: String) {
-        self.虚拟账号 = setter
+        self.id = setter
     }
     pub fn set_虚拟账户名称(&mut self, setter: String) {
         self.虚拟账户名称 = setter
