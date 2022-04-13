@@ -4,7 +4,7 @@ use std::{num::ParseFloatError, str::FromStr};
 use crate::from_txt::{FromTxt, TxtReader};
 
 const UNUSEABLE:[&str;12] = ["", " ", "1", " --------------------------------------------------------------------------------------------------------", "                                             国内支付业务收款回单"," 本机构吸收的本外币存款依照《存款保险条例》受到保护。", "             \u{3000}                                                    \u{3000}                                    \u{3000}", "           \u{3000}                                                    \u{3000}                                      \u{3000}", "           \u{3000}                                                    \u{3000}                                        ", "                                                               \u{3000}                                        \u{3000}", "  \u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}自助打印，请避免重复", "  \u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}自助打印，请避免重复\u{3000}"];
-const FIELDS: [&str; 34] = [
+pub const FIELDS: [&str; 34] = [
     "客户号：",
     "日期：",
     "收款人账号：",
@@ -78,8 +78,8 @@ impl FromStr for Incomings {
         let mut temp1 = String::new();
         let mut temp2 = String::new();
         let mut temp3 = Vec::new();
-        let mut temp4 = Vec::new();
         s.lines()
+            .rev()
             .filter_map(|line| match line {
                 line if UNUSEABLE.iter().any(|&u| u == line) => None,
                 line if line.starts_with("             \u{3000}")
@@ -103,14 +103,16 @@ impl FromStr for Incomings {
                 _ => {
                     let mut line = line
                         .split_whitespace()
+                        .rev()
                         .filter_map(|s| {
-                            if !FIELDS.iter().any(|&f| s.starts_with(f)) {
-                                println!("{s}");
-                                temp3.push(s.to_string());
+                            if !FIELDS.iter().any(|f| s.starts_with(f)) {
+                                println!("add {s} to temp3:{temp3:?}");
+                                temp3.push(s);
                                 None
                             } else if temp3.is_empty() {
                                 Some(s.to_string())
                             } else {
+                                println!("add temp3:{temp3:?} to {s}");
                                 let s = s.to_string() + &temp3.join(" ");
                                 temp3.clear();
                                 Some(s)
@@ -127,25 +129,13 @@ impl FromStr for Incomings {
                 }
             })
             .flatten()
-            .filter_map(|s| {
-                if !FIELDS.iter().any(|f| s.starts_with(f)) {
-                    temp4.push(s);
-                    None
-                } else if temp4.is_empty() {
-                    Some(s)
-                } else {
-                    let s = s + &temp4.join(" ");
-                    temp4.clear();
-                    Some(s)
-                }
-            })
             .for_each(|line| match line {
                 line if line.starts_with("客户号") => {
-                    incomings[index].set_客户号(line.split_once("：").unwrap().1.to_string())
+                    incomings[index].set_客户号(line.split_once("：").unwrap().1.to_string());
+                    index += 1;
                 }
                 line if line.starts_with("日期") => {
                     incomings[index].set_日期(line.split_once("：").unwrap().1.to_string());
-                    index += 1;
                 }
                 line if line.starts_with("收款人账号") => incomings[index]
                     .set_收款人账号(line.split_once("：").unwrap().1.to_string()),
@@ -159,16 +149,13 @@ impl FromStr for Incomings {
                     .set_收款人开户行(line.split_once("：").unwrap().1.to_string()),
                 line if line.starts_with("付款人开户行") => incomings[index]
                     .set_付款人开户行(line.split_once("：").unwrap().1.to_string()),
-                line if line.starts_with("金额") => {
-                    println!("{}", line);
-                    incomings[index].set_金额(
-                        line.chars()
-                            .filter(|c| c.is_ascii_digit() || *c == '.')
-                            .collect::<String>()
-                            .parse()
-                            .unwrap(),
-                    )
-                }
+                line if line.starts_with("金额：") => incomings[index].set_金额(
+                    line.chars()
+                        .filter(|c| c.is_ascii_digit() || *c == '.')
+                        .collect::<String>()
+                        .parse()
+                        .unwrap(),
+                ),
                 line if line.starts_with("金额大写") => {
                     incomings[index].set_金额大写(line.split_once("：").unwrap().1.to_string())
                 }
@@ -206,6 +193,8 @@ impl FromStr for Incomings {
                     .set_接收行行号(line.split_once("：").unwrap().1.to_string()),
                 line if line.starts_with("发起行名称") => incomings[index]
                     .set_发起行名称(line.split_once("：").unwrap().1.to_string()),
+                line if line.starts_with("接收行名称") => incomings[index]
+                    .set_接收行名称(line.split_once("：").unwrap().1.to_string()),
                 line if line.starts_with("入账账号") => {
                     incomings[index].set_入账账号(line.split_once("：").unwrap().1.to_string())
                 }
@@ -234,7 +223,10 @@ impl FromStr for Incomings {
                 line if line.starts_with("打印次数") => {
                     incomings[index].set_打印次数(line.split_once("：").unwrap().1.to_string())
                 }
-                _ => panic!("KnownLine"),
+                _ => {
+                    println!("{line:?}");
+                    panic!("KnownLine")
+                }
             });
         Ok(Self(incomings))
     }
