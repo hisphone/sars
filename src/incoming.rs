@@ -1,5 +1,9 @@
 use anyhow::Result;
-use std::{num::ParseFloatError, str::FromStr};
+use std::{
+    num::ParseFloatError,
+    slice::{Iter, IterMut},
+    str::FromStr,
+};
 
 use crate::from_txt::{FromTxt, TxtReader};
 
@@ -44,6 +48,14 @@ pub const FIELDS: [&str; 34] = [
 #[derive(Debug, Default)]
 pub struct Incomings(Vec<Incoming>);
 
+impl Incomings {
+    pub fn iter(&self) -> Iter<'_, Incoming> {
+        self.into_iter()
+    }
+    pub fn iter_mut(&mut self) -> IterMut<'_, Incoming> {
+        self.into_iter()
+    }
+}
 impl<P> TxtReader<P> for Incomings where P: AsRef<std::path::Path> {}
 
 impl<P> FromTxt<P> for Incomings where P: AsRef<std::path::Path> {}
@@ -67,7 +79,24 @@ pub enum IncomingFromStrErr {
     #[error("ParseFloatErr: `{0}`")]
     ParseFloatError(ParseFloatError),
 }
+impl<'a> IntoIterator for &'a Incomings {
+    type Item = &'a Incoming;
 
+    type IntoIter = Iter<'a, Incoming>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.as_ref().iter()
+    }
+}
+impl<'a> IntoIterator for &'a mut Incomings {
+    type Item = &'a mut Incoming;
+
+    type IntoIter = IterMut<'a, Incoming>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.as_mut().iter_mut()
+    }
+}
 impl FromStr for Incomings {
     type Err = IncomingFromStrErr;
 
