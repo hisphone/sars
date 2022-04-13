@@ -129,7 +129,7 @@ impl FromStr for Incomings {
             .flatten()
             .for_each(|line| match line {
                 line if line.starts_with("客户号") => {
-                    incomings[index].set_客户号(line.split_once("：").unwrap().1.to_string());
+                    // incomings[index].set_客户号(line.split_once("：").unwrap().1.to_string());
                     index += 1;
                 }
                 line if line.starts_with("日期") => {
@@ -143,10 +143,12 @@ impl FromStr for Incomings {
                     .set_收款人名称(line.split_once("：").unwrap().1.to_string()),
                 line if line.starts_with("付款人名称") => incomings[index]
                     .set_付款人名称(line.split_once("：").unwrap().1.to_string()),
-                line if line.starts_with("收款人开户行") => incomings[index]
-                    .set_收款人开户行(line.split_once("：").unwrap().1.to_string()),
-                line if line.starts_with("付款人开户行") => incomings[index]
-                    .set_付款人开户行(line.split_once("：").unwrap().1.to_string()),
+                line if line.starts_with("收款人开户行") => {
+                    // incomings[index].set_收款人开户行(line.split_once("：").unwrap().1.to_string())
+                }
+                line if line.starts_with("付款人开户行") => {
+                    // incomings[index].set_付款人开户行(line.split_once("：").unwrap().1.to_string())
+                }
                 line if line.starts_with("金额：") => incomings[index].set_金额(
                     line.chars()
                         .filter(|c| c.is_ascii_digit() || *c == '.')
@@ -155,7 +157,7 @@ impl FromStr for Incomings {
                         .unwrap(),
                 ),
                 line if line.starts_with("金额大写") => {
-                    incomings[index].set_金额大写(line.split_once("：").unwrap().1.to_string())
+                    // incomings[index].set_金额大写(line.split_once("：").unwrap().1.to_string())
                 }
                 line if line.starts_with("用途") => {
                     incomings[index].set_用途(line.split_once("：").unwrap().1.to_string())
@@ -167,59 +169,67 @@ impl FromStr for Incomings {
                     incomings[index].set_附言(line.split_once("：").unwrap().1.to_string())
                 }
                 line if line.starts_with("报文种类") => {
-                    incomings[index].set_报文种类(line.split_once("：").unwrap().1.to_string())
+                    // incomings[index].set_报文种类(line.split_once("：").unwrap().1.to_string())
                 }
                 line if line.starts_with("业务类型") => {
-                    incomings[index].set_业务类型(line.split_once("：").unwrap().1.to_string())
+                    // incomings[index].set_业务类型(line.split_once("：").unwrap().1.to_string())
                 }
                 line if line.starts_with("业务种类") => {
-                    incomings[index].set_业务种类(line.split_once("：").unwrap().1.to_string())
+                    // incomings[index].set_业务种类(line.split_once("：").unwrap().1.to_string())
                 }
                 line if line.starts_with("凭证号码") => {
-                    incomings[index].set_凭证号码(line.split_once("：").unwrap().1.to_string())
+                    // incomings[index].set_凭证号码(line.split_once("：").unwrap().1.to_string())
                 }
-                line if line.starts_with("收支申报号") => incomings[index]
-                    .set_收支申报号(line.split_once("：").unwrap().1.to_string()),
-                line if line.starts_with("业务标识号") => incomings[index]
-                    .set_业务标识号(line.split_once("：").unwrap().1.to_string()),
+                line if line.starts_with("收支申报号") => {
+                    // incomings[index].set_收支申报号(line.split_once("：").unwrap().1.to_string())
+                }
+                line if line.starts_with("业务标识号") => {
+                    // incomings[index].set_业务标识号(line.split_once("：").unwrap().1.to_string())
+                }
                 line if line.starts_with("业务编号") => {
-                    incomings[index].set_业务编号(line.split_once("：").unwrap().1.to_string())
+                    // incomings[index].set_业务编号(line.split_once("：").unwrap().1.to_string())
                 }
-                line if line.starts_with("发起行行号") => incomings[index]
-                    .set_发起行行号(line.split_once("：").unwrap().1.to_string()),
-                line if line.starts_with("接收行行号") => incomings[index]
-                    .set_接收行行号(line.split_once("：").unwrap().1.to_string()),
-                line if line.starts_with("发起行名称") => incomings[index]
-                    .set_发起行名称(line.split_once("：").unwrap().1.to_string()),
-                line if line.starts_with("接收行名称") => incomings[index]
-                    .set_接收行名称(line.split_once("：").unwrap().1.to_string()),
+                line if line.starts_with("发起行行号") => {
+                    // incomings[index].set_发起行行号(line.split_once("：").unwrap().1.to_string())
+                }
+                line if line.starts_with("接收行行号") => {
+                    // incomings[index].set_接收行行号(line.split_once("：").unwrap().1.to_string())
+                }
+                line if line.starts_with("发起行名称") => {
+                    // incomings[index].set_发起行名称(line.split_once("：").unwrap().1.to_string())
+                }
+                line if line.starts_with("接收行名称") => {
+                    // incomings[index].set_接收行名称(line.split_once("：").unwrap().1.to_string())
+                }
                 line if line.starts_with("入账账号") => {
-                    incomings[index].set_入账账号(line.split_once("：").unwrap().1.to_string())
+                    // incomings[index].set_入账账号(line.split_once("：").unwrap().1.to_string())
                 }
                 line if line.starts_with("入账户名") => {
-                    incomings[index].set_入账户名(line.split_once("：").unwrap().1.to_string())
+                    // incomings[index].set_入账户名(line.split_once("：").unwrap().1.to_string())
                 }
                 line if line.starts_with("交易机构") => {
-                    incomings[index].set_交易机构(line.split_once("：").unwrap().1.to_string())
+                    // incomings[index].set_交易机构(line.split_once("：").unwrap().1.to_string())
                 }
                 line if line.starts_with("交易渠道") => {
-                    incomings[index].set_交易渠道(line.split_once("：").unwrap().1.to_string())
+                    // incomings[index].set_交易渠道(line.split_once("：").unwrap().1.to_string())
                 }
-                line if line.starts_with("交易流水号") => incomings[index]
-                    .set_交易流水号(line.split_once("：").unwrap().1.to_string()),
+                line if line.starts_with("交易流水号") => {
+                    // incomings[index].set_交易流水号(line.split_once("：").unwrap().1.to_string())
+                }
                 line if line.starts_with("经办") => {
-                    incomings[index].set_经办(line.split_once("：").unwrap().1.to_string())
+                    // incomings[index].set_经办(line.split_once("：").unwrap().1.to_string())
                 }
                 line if line.starts_with("回单编号") => {
-                    incomings[index].set_回单编号(line.split_once("：").unwrap().1.to_string())
+                    // incomings[index].set_回单编号(line.split_once("：").unwrap().1.to_string())
                 }
-                line if line.starts_with("回单验证码") => incomings[index]
-                    .set_回单验证码(line.split_once("：").unwrap().1.to_string()),
+                line if line.starts_with("回单验证码") => {
+                    // incomings[index].set_回单验证码(line.split_once("：").unwrap().1.to_string())
+                }
                 line if line.starts_with("打印时间") => {
-                    incomings[index].set_打印时间(line.split_once("：").unwrap().1.to_string())
+                    // incomings[index].set_打印时间(line.split_once("：").unwrap().1.to_string())
                 }
                 line if line.starts_with("打印次数") => {
-                    incomings[index].set_打印次数(line.split_once("：").unwrap().1.to_string())
+                    // incomings[index].set_打印次数(line.split_once("：").unwrap().1.to_string())
                 }
                 _ => {
                     println!("{line:?}");
@@ -231,46 +241,46 @@ impl FromStr for Incomings {
 }
 #[derive(Debug, Default, Clone)]
 pub struct Incoming {
-    客户号: String,
+    // 客户号: String,
     日期: String,
     收款人账号: String,
     付款人账号: String,
     收款人名称: String,
     付款人名称: String,
-    收款人开户行: String,
-    付款人开户行: String,
+    // 收款人开户行: String,
+    // 付款人开户行: String,
     金额: f64,
-    金额大写: String,
+    // 金额大写: String,
     用途: String,
     备注: String,
     附言: String,
-    报文种类: String,
-    业务类型: String,
-    业务种类: String,
-    凭证号码: String,
-    收支申报号: String,
-    业务标识号: String,
-    业务编号: String,
-    发起行行号: String,
-    接收行行号: String,
-    发起行名称: String,
-    接收行名称: String,
-    入账账号: String,
-    入账户名: String,
-    交易机构: String,
-    交易渠道: String,
-    交易流水号: String,
-    经办: String,
-    回单编号: String,
-    回单验证码: String,
-    打印时间: String,
-    打印次数: String,
+    // 报文种类: String,
+    // 业务类型: String,
+    // 业务种类: String,
+    // 凭证号码: String,
+    // 收支申报号: String,
+    // 业务标识号: String,
+    // 业务编号: String,
+    // 发起行行号: String,
+    // 接收行行号: String,
+    // 发起行名称: String,
+    // 接收行名称: String,
+    // 入账账号: String,
+    // 入账户名: String,
+    // 交易机构: String,
+    // 交易渠道: String,
+    // 交易流水号: String,
+    // 经办: String,
+    // 回单编号: String,
+    // 回单验证码: String,
+    // 打印时间: String,
+    // 打印次数: String,
 }
 
 impl Incoming {
-    pub fn set_客户号(&mut self, setter: String) {
-        self.客户号 = setter
-    }
+    // pub fn set_客户号(&mut self, setter: String) {
+    //     self.客户号 = setter
+    // }
     pub fn set_日期(&mut self, setter: String) {
         self.日期 = setter
     }
@@ -286,18 +296,18 @@ impl Incoming {
     pub fn set_付款人名称(&mut self, setter: String) {
         self.付款人名称 = setter
     }
-    pub fn set_收款人开户行(&mut self, setter: String) {
-        self.收款人开户行 = setter
-    }
-    pub fn set_付款人开户行(&mut self, setter: String) {
-        self.付款人开户行 = setter
-    }
+    // pub fn set_收款人开户行(&mut self, setter: String) {
+    //     self.收款人开户行 = setter
+    // }
+    // pub fn set_付款人开户行(&mut self, setter: String) {
+    //     self.付款人开户行 = setter
+    // }
     pub fn set_金额(&mut self, setter: f64) {
         self.金额 = setter
     }
-    pub fn set_金额大写(&mut self, setter: String) {
-        self.金额大写 = setter
-    }
+    // pub fn set_金额大写(&mut self, setter: String) {
+    //     self.金额大写 = setter
+    // }
     pub fn set_用途(&mut self, setter: String) {
         self.用途 = setter
     }
@@ -307,67 +317,169 @@ impl Incoming {
     pub fn set_附言(&mut self, setter: String) {
         self.附言 = setter
     }
-    pub fn set_报文种类(&mut self, setter: String) {
-        self.报文种类 = setter
+    // pub fn set_报文种类(&mut self, setter: String) {
+    //     self.报文种类 = setter
+    // }
+    // pub fn set_业务类型(&mut self, setter: String) {
+    //     self.业务类型 = setter
+    // }
+    // pub fn set_业务种类(&mut self, setter: String) {
+    //     self.业务种类 = setter
+    // }
+    // pub fn set_凭证号码(&mut self, setter: String) {
+    //     self.凭证号码 = setter
+    // }
+    // pub fn set_收支申报号(&mut self, setter: String) {
+    //     self.收支申报号 = setter
+    // }
+    // pub fn set_业务标识号(&mut self, setter: String) {
+    //     self.业务标识号 = setter
+    // }
+    // pub fn set_业务编号(&mut self, setter: String) {
+    //     self.业务编号 = setter
+    // }
+    // pub fn set_发起行行号(&mut self, setter: String) {
+    //     self.发起行行号 = setter
+    // }
+    // pub fn set_接收行行号(&mut self, setter: String) {
+    //     self.接收行行号 = setter
+    // }
+    // pub fn set_发起行名称(&mut self, setter: String) {
+    //     self.发起行名称 = setter
+    // }
+    // pub fn set_接收行名称(&mut self, setter: String) {
+    //     self.接收行名称 = setter
+    // }
+    // pub fn set_入账账号(&mut self, setter: String) {
+    //     self.入账账号 = setter
+    // }
+    // pub fn set_入账户名(&mut self, setter: String) {
+    //     self.入账户名 = setter
+    // }
+    // pub fn set_交易机构(&mut self, setter: String) {
+    //     self.交易机构 = setter
+    // }
+    // pub fn set_交易渠道(&mut self, setter: String) {
+    //     self.交易渠道 = setter
+    // }
+    // pub fn set_交易流水号(&mut self, setter: String) {
+    //     self.交易流水号 = setter
+    // }
+    // pub fn set_经办(&mut self, setter: String) {
+    //     self.经办 = setter
+    // }
+    // pub fn set_回单编号(&mut self, setter: String) {
+    //     self.回单编号 = setter
+    // }
+    // pub fn set_回单验证码(&mut self, setter: String) {
+    //     self.回单验证码 = setter
+    // }
+    // pub fn set_打印时间(&mut self, setter: String) {
+    //     self.打印时间 = setter
+    // }
+    // pub fn set_打印次数(&mut self, setter: String) {
+    //     self.打印次数 = setter
+    // }
+    // pub fn get_客户号(&self) -> &String {
+    //     &self.客户号
+    // }
+    pub fn get_日期(&self) -> &String {
+        &self.日期
     }
-    pub fn set_业务类型(&mut self, setter: String) {
-        self.业务类型 = setter
+    pub fn get_收款人账号(&self) -> &String {
+        &self.收款人账号
     }
-    pub fn set_业务种类(&mut self, setter: String) {
-        self.业务种类 = setter
+    pub fn get_付款人账号(&self) -> &String {
+        &self.付款人账号
     }
-    pub fn set_凭证号码(&mut self, setter: String) {
-        self.凭证号码 = setter
+    pub fn get_收款人名称(&self) -> &String {
+        &self.收款人名称
     }
-    pub fn set_收支申报号(&mut self, setter: String) {
-        self.收支申报号 = setter
+    pub fn get_付款人名称(&self) -> &String {
+        &self.付款人名称
     }
-    pub fn set_业务标识号(&mut self, setter: String) {
-        self.业务标识号 = setter
+    // pub fn get_收款人开户行(&self) -> &String {
+    //     &self.收款人开户行
+    // }
+    // pub fn get_付款人开户行(&self) -> &String {
+    //     &self.付款人开户行
+    // }
+    pub fn get_金额(&self) -> &f64 {
+        &self.金额
     }
-    pub fn set_业务编号(&mut self, setter: String) {
-        self.业务编号 = setter
+    // pub fn get_金额大写(&self) -> &String {
+    //     &self.金额大写
+    // }
+    pub fn get_用途(&self) -> &String {
+        &self.用途
     }
-    pub fn set_发起行行号(&mut self, setter: String) {
-        self.发起行行号 = setter
+    pub fn get_备注(&self) -> &String {
+        &self.备注
     }
-    pub fn set_接收行行号(&mut self, setter: String) {
-        self.接收行行号 = setter
+    pub fn get_附言(&self) -> &String {
+        &self.附言
     }
-    pub fn set_发起行名称(&mut self, setter: String) {
-        self.发起行名称 = setter
-    }
-    pub fn set_接收行名称(&mut self, setter: String) {
-        self.接收行名称 = setter
-    }
-    pub fn set_入账账号(&mut self, setter: String) {
-        self.入账账号 = setter
-    }
-    pub fn set_入账户名(&mut self, setter: String) {
-        self.入账户名 = setter
-    }
-    pub fn set_交易机构(&mut self, setter: String) {
-        self.交易机构 = setter
-    }
-    pub fn set_交易渠道(&mut self, setter: String) {
-        self.交易渠道 = setter
-    }
-    pub fn set_交易流水号(&mut self, setter: String) {
-        self.交易流水号 = setter
-    }
-    pub fn set_经办(&mut self, setter: String) {
-        self.经办 = setter
-    }
-    pub fn set_回单编号(&mut self, setter: String) {
-        self.回单编号 = setter
-    }
-    pub fn set_回单验证码(&mut self, setter: String) {
-        self.回单验证码 = setter
-    }
-    pub fn set_打印时间(&mut self, setter: String) {
-        self.打印时间 = setter
-    }
-    pub fn set_打印次数(&mut self, setter: String) {
-        self.打印次数 = setter
-    }
+    // pub fn get_报文种类(&self) -> &String {
+    //     &self.报文种类
+    // }
+    // pub fn get_业务类型(&self) -> &String {
+    //     &self.业务类型
+    // }
+    // pub fn get_业务种类(&self) -> &String {
+    //     &self.业务种类
+    // }
+    // pub fn get_凭证号码(&self) -> &String {
+    //     &self.凭证号码
+    // }
+    // pub fn get_收支申报号(&self) -> &String {
+    //     &self.收支申报号
+    // }
+    // pub fn get_业务标识号(&self) -> &String {
+    //     &self.业务标识号
+    // }
+    // pub fn get_业务编号(&self) -> &String {
+    //     &self.业务编号
+    // }
+    // pub fn get_发起行行号(&self) -> &String {
+    //     &self.发起行行号
+    // }
+    // pub fn get_接收行行号(&self) -> &String {
+    //     &self.接收行行号
+    // }
+    // pub fn get_发起行名称(&self) -> &String {
+    //     &self.发起行名称
+    // }
+    // pub fn get_接收行名称(&self) -> &String {
+    //     &self.接收行名称
+    // }
+    // pub fn get_入账账号(&self) -> &String {
+    //     &self.入账账号
+    // }
+    // pub fn get_入账户名(&self) -> &String {
+    //     &self.入账户名
+    // }
+    // pub fn get_交易机构(&self) -> &String {
+    //     &self.交易机构
+    // }
+    // pub fn get_交易渠道(&self) -> &String {
+    //     &self.交易渠道
+    // }
+    // pub fn get_交易流水号(&self) -> &String {
+    //     &self.交易流水号
+    // }
+    // pub fn get_经办(&self) -> &String {
+    //     &self.经办
+    // }
+    // pub fn get_回单编号(&self) -> &String {
+    //     &self.回单编号
+    // }
+    // pub fn get_回单验证码(&self) -> &String {
+    //     &self.回单验证码
+    // }
+    // pub fn get_打印时间(&self) -> &String {
+    //     &self.打印时间
+    // }
+    // pub fn get_打印次数(&self) -> &String {
+    //     &self.打印次数
+    // }
 }
