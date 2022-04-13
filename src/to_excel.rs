@@ -6,7 +6,10 @@ pub trait Header {
 pub trait ToRow {
     fn to_row(&self) -> Row;
 }
-pub trait ToExcel: Header + IntoIterator
+pub trait Title {
+    fn title(&self) -> &'static str;
+}
+pub trait IntoExcel: Header + Title + IntoIterator
 where
     <Self as IntoIterator>::Item: ToRow,
     Self: Sized,
@@ -19,7 +22,11 @@ where
                 .to_str()
                 .unwrap(),
         );
-        let mut sheet_base = wb.create_sheet("基础数据");
+        let mut sheet_base = wb.create_sheet(if Self::title(&self).is_empty() {
+            "sheet1"
+        } else {
+            Self::title(&self)
+        });
         wb.write_sheet(&mut sheet_base, move |sheet_writer| {
             let sw = sheet_writer;
             sw.append_row(self.header())?;

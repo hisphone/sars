@@ -1,9 +1,32 @@
-use std::{convert::Infallible, path::Path, str::FromStr};
+use std::{
+    convert::Infallible,
+    path::Path,
+    slice::{Iter, IterMut},
+    str::FromStr,
+    vec::IntoIter,
+};
 
-use crate::from_txt::{FromTxt, TxtReader};
+use simple_excel_writer::{row, Row};
+
+use crate::{
+    from_txt::{FromTxt, TxtReader},
+    to_excel::{Header, IntoExcel, Title, ToRow},
+};
 
 #[derive(Debug, Default)]
 pub struct Balances(Vec<Balance>);
+
+impl Header for Balances {
+    fn header(&self) -> Row {
+        row!["id", "虚拟账户名称", "自有额度"]
+    }
+}
+impl Title for Balances {
+    fn title(&self) -> &'static str {
+        "余额"
+    }
+}
+impl IntoExcel for Balances {}
 
 impl AsRef<Vec<Balance>> for Balances {
     fn as_ref(&self) -> &Vec<Balance> {
@@ -16,7 +39,33 @@ impl AsMut<Vec<Balance>> for Balances {
         &mut self.0
     }
 }
+impl IntoIterator for Balances {
+    type Item = Balance;
 
+    type IntoIter = IntoIter<Balance>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+impl<'a> IntoIterator for &'a Balances {
+    type Item = &'a Balance;
+
+    type IntoIter = Iter<'a, Balance>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.as_ref().iter()
+    }
+}
+impl<'a> IntoIterator for &'a mut Balances {
+    type Item = &'a mut Balance;
+
+    type IntoIter = IterMut<'a, Balance>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.as_mut().iter_mut()
+    }
+}
 impl<P> TxtReader<P> for Balances where P: AsRef<Path> {}
 
 impl<P> FromTxt<P> for Balances where P: AsRef<Path> {}
@@ -112,5 +161,10 @@ impl Balance {
     }
     pub fn set_自有额度(&mut self, setter: f64) {
         self.自有额度 = setter
+    }
+}
+impl ToRow for Balance {
+    fn to_row(&self) -> Row {
+        row![self.id.as_ref(), self.虚拟账户名称.as_ref(), self.自有额度]
     }
 }

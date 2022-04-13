@@ -1,11 +1,16 @@
 use anyhow::Result;
+use simple_excel_writer::{row, Row};
 use std::{
-    num::ParseFloatError,
+    convert::Infallible,
     slice::{Iter, IterMut},
     str::FromStr,
+    vec::IntoIter,
 };
 
-use crate::from_txt::{FromTxt, TxtReader};
+use crate::{
+    from_txt::{FromTxt, TxtReader},
+    to_excel::{Header, IntoExcel, Title, ToRow},
+};
 
 const UNUSEABLE:[&str;12] = ["", " ", "1", " --------------------------------------------------------------------------------------------------------", "                                             国内支付业务收款回单"," 本机构吸收的本外币存款依照《存款保险条例》受到保护。", "             \u{3000}                                                    \u{3000}                                    \u{3000}", "           \u{3000}                                                    \u{3000}                                      \u{3000}", "           \u{3000}                                                    \u{3000}                                        ", "                                                               \u{3000}                                        \u{3000}", "  \u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}自助打印，请避免重复", "  \u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}自助打印，请避免重复\u{3000}"];
 pub const FIELDS: [&str; 34] = [
@@ -56,6 +61,28 @@ impl Incomings {
         self.into_iter()
     }
 }
+
+impl Header for Incomings {
+    fn header(&self) -> Row {
+        row![
+            "日期",
+            "收款人账号",
+            "付款人账号",
+            "收款人名称",
+            "付款人名称",
+            "金额",
+            "用途",
+            "备注",
+            "附言"
+        ]
+    }
+}
+impl Title for Incomings {
+    fn title(&self) -> &'static str {
+        "收入"
+    }
+}
+impl IntoExcel for Incomings {}
 impl<P> TxtReader<P> for Incomings where P: AsRef<std::path::Path> {}
 
 impl<P> FromTxt<P> for Incomings where P: AsRef<std::path::Path> {}
@@ -72,12 +99,14 @@ impl AsMut<Vec<Incoming>> for Incomings {
     }
 }
 
-#[derive(thiserror::Error, Debug)]
-pub enum IncomingFromStrErr {
-    #[error("KnownLine: `{0}`")]
-    KNOWN(String),
-    #[error("ParseFloatErr: `{0}`")]
-    ParseFloatError(ParseFloatError),
+impl IntoIterator for Incomings {
+    type Item = Incoming;
+
+    type IntoIter = IntoIter<Incoming>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
 }
 impl<'a> IntoIterator for &'a Incomings {
     type Item = &'a Incoming;
@@ -98,7 +127,7 @@ impl<'a> IntoIterator for &'a mut Incomings {
     }
 }
 impl FromStr for Incomings {
-    type Err = IncomingFromStrErr;
+    type Err = Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut incomings =
@@ -164,8 +193,15 @@ impl FromStr for Incomings {
                 line if line.starts_with("日期") => {
                     incomings[index].set_日期(line.split_once("：").unwrap().1.to_string());
                 }
-                line if line.starts_with("收款人账号") => incomings[index]
-                    .set_收款人账号(line.split_once("：").unwrap().1.to_string()),
+                line if line.starts_with("收款人账号") => {
+                    let account = line.split_once("：").unwrap().1;
+                    let account = if account != "102831264647" {
+                        account.strip_prefix("102831264647").unwrap()
+                    } else {
+                        account
+                    };
+                    incomings[index].set_收款人账号(account.to_string())
+                }
                 line if line.starts_with("付款人账号") => incomings[index]
                     .set_付款人账号(line.split_once("：").unwrap().1.to_string()),
                 line if line.starts_with("收款人名称") => incomings[index]
@@ -511,4 +547,19 @@ impl Incoming {
     // pub fn get_打印次数(&self) -> &String {
     //     &self.打印次数
     // }
+}
+impl ToRow for Incoming {
+    fn to_row(&self) -> Row {
+        row![
+            self.日期.as_ref(),
+            self.收款人账号.as_ref(),
+            self.付款人账号.as_ref(),
+            self.收款人名称.as_ref(),
+            self.付款人名称.as_ref(),
+            self.金额,
+            self.用途.as_ref(),
+            self.备注.as_ref(),
+            self.附言.as_ref()
+        ]
+    }
 }
