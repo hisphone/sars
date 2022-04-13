@@ -106,14 +106,12 @@ impl FromStr for Incomings {
                         .rev()
                         .filter_map(|s| {
                             if !FIELDS.iter().any(|f| s.starts_with(f)) {
-                                println!("add {s} to temp3:{temp3:?}");
                                 temp3.push(s);
                                 None
                             } else if temp3.is_empty() {
                                 Some(s.to_string())
                             } else {
-                                println!("add temp3:{temp3:?} to {s}");
-                                let s = s.to_string() + &temp3.join(" ");
+                                let s = s.to_string() + " " + &temp3.join(" ");
                                 temp3.clear();
                                 Some(s)
                             }
