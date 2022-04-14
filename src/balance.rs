@@ -9,24 +9,24 @@ use std::{
 use simple_excel_writer::{row, Row};
 
 use crate::{
-    from_txt::{FromTxt, TxtReader},
+    from_file::{FromTxt, TxtReader},
     to_excel::{Header, IntoExcel, Title, ToRow},
 };
 
 #[derive(Debug, Default)]
 pub struct Balances(Vec<Balance>);
 
-impl Header for Balances {
+impl<'a> Header for &'a Balances {
     fn header(&self) -> Row {
         row!["id", "虚拟账户名称", "自有额度"]
     }
 }
-impl Title for Balances {
+impl<'a> Title for &'a Balances {
     fn title(&self) -> &'static str {
         "余额"
     }
 }
-impl IntoExcel for Balances {}
+impl<'a> IntoExcel for &'a Balances {}
 
 impl AsRef<Vec<Balance>> for Balances {
     fn as_ref(&self) -> &Vec<Balance> {
@@ -39,15 +39,7 @@ impl AsMut<Vec<Balance>> for Balances {
         &mut self.0
     }
 }
-impl IntoIterator for Balances {
-    type Item = Balance;
 
-    type IntoIter = IntoIter<Balance>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-    }
-}
 impl<'a> IntoIterator for &'a Balances {
     type Item = &'a Balance;
 
@@ -74,7 +66,7 @@ impl FromStr for Balances {
     type Err = Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut balances = vec![Balance::default(); 448];
+        let mut balances = vec![Balance::default(); 444];
         let mut index = 0;
         let mut temp = String::new();
         s.lines().rev().for_each(|line| match line {
@@ -128,16 +120,16 @@ impl FromStr for Balances {
                 let lines = line.split("│").skip(2).map(|s|s.trim()).collect::<Vec<_>>();
                 if lines[1].is_empty() && lines[2].is_empty() {
                     temp = lines[0].to_string()
-                } else if temp.is_empty() {
-                    balances[index].set_虚拟账号(lines[0].strip_prefix("102831264647").unwrap().to_string());
-                    balances[index].set_虚拟账户名称(lines[1].to_string());
-                    balances[index].set_自有额度(lines[2].parse().unwrap());
+                } else if temp.trim().is_empty() {
+                    balances[index].set_id(lines[0].strip_prefix("102831264647").unwrap().parse().unwrap());
+                    balances[index].set_name(lines[1].to_string());
+                    balances[index].set_ammount(lines[2].parse().unwrap());
                     index += 1;
                 } else {
-                    balances[index].set_虚拟账号(lines[0].strip_prefix("102831264647").unwrap().to_string() + &temp);
-                    balances[index].set_虚拟账户名称(lines[1].to_string());
-                    balances[index].set_自有额度(lines[2].parse().unwrap());
-                    index += 1;
+                    // balances[index].set_id((lines[0].strip_prefix("102831264647").unwrap().to_string() + &temp).parse().unwrap());
+                    // balances[index].set_name(lines[1].to_string());
+                    // balances[index].set_ammount(lines[2].parse().unwrap());
+                    // index += 1;
                     temp.clear();
                 }
             },
@@ -148,23 +140,23 @@ impl FromStr for Balances {
 
 #[derive(Debug, Default, Clone)]
 pub struct Balance {
-    id: String,
-    虚拟账户名称: String,
-    自有额度: f64,
+    pub id: u32,
+    name: String,
+    ammount: f64,
 }
 impl Balance {
-    pub fn set_虚拟账号(&mut self, setter: String) {
+    pub fn set_id(&mut self, setter: u32) {
         self.id = setter
     }
-    pub fn set_虚拟账户名称(&mut self, setter: String) {
-        self.虚拟账户名称 = setter
+    pub fn set_name(&mut self, setter: String) {
+        self.name = setter
     }
-    pub fn set_自有额度(&mut self, setter: f64) {
-        self.自有额度 = setter
+    pub fn set_ammount(&mut self, setter: f64) {
+        self.ammount = setter
     }
 }
-impl ToRow for Balance {
+impl<'a> ToRow for &'a Balance {
     fn to_row(&self) -> Row {
-        row![self.id.as_ref(), self.虚拟账户名称.as_ref(), self.自有额度]
+        row![self.id as f64, self.name.as_ref(), self.ammount]
     }
 }

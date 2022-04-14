@@ -3,11 +3,12 @@ use std::{
     path::Path,
 };
 
-use calamine::{open_workbook, RangeDeserializerBuilder, Reader, ToCellDeserializer, Xls};
+use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xls};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    balance::Balances, incoming::Incomings, outgoing::Outgoings, refund::Refunds, start::Starts,
+    balance::Balances, from_file::FromExcel, incoming::Incomings, outgoing::Outgoings,
+    refund::Refunds, start::Starts,
 };
 
 pub struct SubAccount {
@@ -87,8 +88,11 @@ where
     }
 }
 
-impl SubInfos {
-    pub fn from_excel<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
+impl<P> FromExcel<P> for SubInfos
+where
+    P: AsRef<Path>,
+{
+    fn from_excel(path: P) -> anyhow::Result<Self> {
         let mut workbook: Xls<_> = open_workbook(path).unwrap();
         let worksheet = workbook
             .worksheet_range_at(0)

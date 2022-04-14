@@ -2,13 +2,14 @@ use anyhow::Result;
 use simple_excel_writer::{row, Row};
 use std::{
     convert::Infallible,
+    io::Read,
     slice::{Iter, IterMut},
     str::FromStr,
     vec::IntoIter,
 };
 
 use crate::{
-    from_txt::{FromTxt, TxtReader},
+    from_file::{FromTxt, TxtReader},
     to_excel::{Header, IntoExcel, Title, ToRow},
 };
 
@@ -62,7 +63,7 @@ impl Incomings {
     }
 }
 
-impl Header for Incomings {
+impl<'a> Header for &'a Incomings {
     fn header(&self) -> Row {
         row![
             "日期",
@@ -77,12 +78,12 @@ impl Header for Incomings {
         ]
     }
 }
-impl Title for Incomings {
+impl<'a> Title for &'a Incomings {
     fn title(&self) -> &'static str {
         "收入"
     }
 }
-impl IntoExcel for Incomings {}
+impl<'a> IntoExcel for &'a Incomings {}
 impl<P> TxtReader<P> for Incomings where P: AsRef<std::path::Path> {}
 
 impl<P> FromTxt<P> for Incomings where P: AsRef<std::path::Path> {}
@@ -99,15 +100,6 @@ impl AsMut<Vec<Incoming>> for Incomings {
     }
 }
 
-impl IntoIterator for Incomings {
-    type Item = Incoming;
-
-    type IntoIter = IntoIter<Incoming>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-    }
-}
 impl<'a> IntoIterator for &'a Incomings {
     type Item = &'a Incoming;
 
@@ -136,7 +128,8 @@ impl FromStr for Incomings {
         let mut temp1 = String::new();
         let mut temp2 = String::new();
         let mut temp3 = Vec::new();
-        s.lines()
+        let lines = s
+            .lines()
             .rev()
             .filter_map(|line| match line {
                 line if UNUSEABLE.iter().any(|&u| u == line) => None,
@@ -184,37 +177,44 @@ impl FromStr for Incomings {
                     Some(line)
                 }
             })
-            .flatten()
-            .for_each(|line| match line {
+            .flatten();
+        for line in lines {
+            match line {
                 line if line.starts_with("客户号") => {
                     // incomings[index].set_客户号(line.split_once("：").unwrap().1.to_string());
                     index += 1;
                 }
                 line if line.starts_with("日期") => {
-                    incomings[index].set_日期(line.split_once("：").unwrap().1.to_string());
+                    incomings[index].set_date(line.split_once("：").unwrap().1.to_string());
                 }
                 line if line.starts_with("收款人账号") => {
                     let account = line.split_once("：").unwrap().1;
+                    let account = account
+                        .chars()
+                        .filter(char::is_ascii_digit)
+                        .collect::<String>();
                     let account = if account != "102831264647" {
-                        account.strip_prefix("102831264647").unwrap()
+                        account.strip_prefix("102831264647").unwrap().to_string()
                     } else {
-                        account
+                        "0".to_string()
                     };
-                    incomings[index].set_收款人账号(account.to_string())
+                    incomings[index].set_id(account.parse().unwrap())
                 }
-                line if line.starts_with("付款人账号") => incomings[index]
-                    .set_付款人账号(line.split_once("：").unwrap().1.to_string()),
+                line if line.starts_with("付款人账号") => {
+                    incomings[index].set_from_id(line.split_once("：").unwrap().1.to_string())
+                }
                 line if line.starts_with("收款人名称") => incomings[index]
                     .set_收款人名称(line.split_once("：").unwrap().1.to_string()),
-                line if line.starts_with("付款人名称") => incomings[index]
-                    .set_付款人名称(line.split_once("：").unwrap().1.to_string()),
+                line if line.starts_with("付款人名称") => {
+                    incomings[index].set_from_name(line.split_once("：").unwrap().1.to_string())
+                }
                 line if line.starts_with("收款人开户行") => {
                     // incomings[index].set_收款人开户行(line.split_once("：").unwrap().1.to_string())
                 }
                 line if line.starts_with("付款人开户行") => {
                     // incomings[index].set_付款人开户行(line.split_once("：").unwrap().1.to_string())
                 }
-                line if line.starts_with("金额：") => incomings[index].set_金额(
+                line if line.starts_with("金额：") => incomings[index].set_ammount(
                     line.chars()
                         .filter(|c| c.is_ascii_digit() || *c == '.')
                         .collect::<String>()
@@ -225,13 +225,13 @@ impl FromStr for Incomings {
                     // incomings[index].set_金额大写(line.split_once("：").unwrap().1.to_string())
                 }
                 line if line.starts_with("用途") => {
-                    incomings[index].set_用途(line.split_once("：").unwrap().1.to_string())
+                    incomings[index].set_usage(line.split_once("：").unwrap().1.to_string())
                 }
                 line if line.starts_with("备注") => {
-                    incomings[index].set_备注(line.split_once("：").unwrap().1.to_string())
+                    incomings[index].set_comment(line.split_once("：").unwrap().1.to_string())
                 }
                 line if line.starts_with("附言") => {
-                    incomings[index].set_附言(line.split_once("：").unwrap().1.to_string())
+                    incomings[index].set_postscript(line.split_once("：").unwrap().1.to_string())
                 }
                 line if line.starts_with("报文种类") => {
                     // incomings[index].set_报文种类(line.split_once("：").unwrap().1.to_string())
@@ -300,25 +300,26 @@ impl FromStr for Incomings {
                     println!("{line:?}");
                     panic!("KnownLine")
                 }
-            });
+            }
+        }
         Ok(Self(incomings))
     }
 }
 #[derive(Debug, Default, Clone)]
 pub struct Incoming {
     // 客户号: String,
-    日期: String,
-    收款人账号: String,
-    付款人账号: String,
-    收款人名称: String,
-    付款人名称: String,
+    id: u32,
+    date: String,
+    from_id: String,
+    name: String,
+    from_name: String,
     // 收款人开户行: String,
     // 付款人开户行: String,
-    金额: f64,
+    ammount: f64,
     // 金额大写: String,
-    用途: String,
-    备注: String,
-    附言: String,
+    usage: String,
+    comment: String,
+    postscript: String,
     // 报文种类: String,
     // 业务类型: String,
     // 业务种类: String,
@@ -346,20 +347,20 @@ impl Incoming {
     // pub fn set_客户号(&mut self, setter: String) {
     //     self.客户号 = setter
     // }
-    pub fn set_日期(&mut self, setter: String) {
-        self.日期 = setter
+    pub fn set_id(&mut self, setter: u32) {
+        self.id = setter
     }
-    pub fn set_收款人账号(&mut self, setter: String) {
-        self.收款人账号 = setter
+    pub fn set_date(&mut self, setter: String) {
+        self.date = setter
     }
-    pub fn set_付款人账号(&mut self, setter: String) {
-        self.付款人账号 = setter
+    pub fn set_from_id(&mut self, setter: String) {
+        self.from_id = setter
     }
     pub fn set_收款人名称(&mut self, setter: String) {
-        self.收款人名称 = setter
+        self.name = setter
     }
-    pub fn set_付款人名称(&mut self, setter: String) {
-        self.付款人名称 = setter
+    pub fn set_from_name(&mut self, setter: String) {
+        self.from_name = setter
     }
     // pub fn set_收款人开户行(&mut self, setter: String) {
     //     self.收款人开户行 = setter
@@ -367,20 +368,20 @@ impl Incoming {
     // pub fn set_付款人开户行(&mut self, setter: String) {
     //     self.付款人开户行 = setter
     // }
-    pub fn set_金额(&mut self, setter: f64) {
-        self.金额 = setter
+    pub fn set_ammount(&mut self, setter: f64) {
+        self.ammount = setter
     }
     // pub fn set_金额大写(&mut self, setter: String) {
     //     self.金额大写 = setter
     // }
-    pub fn set_用途(&mut self, setter: String) {
-        self.用途 = setter
+    pub fn set_usage(&mut self, setter: String) {
+        self.usage = setter
     }
-    pub fn set_备注(&mut self, setter: String) {
-        self.备注 = setter
+    pub fn set_comment(&mut self, setter: String) {
+        self.comment = setter
     }
-    pub fn set_附言(&mut self, setter: String) {
-        self.附言 = setter
+    pub fn set_postscript(&mut self, setter: String) {
+        self.postscript = setter
     }
     // pub fn set_报文种类(&mut self, setter: String) {
     //     self.报文种类 = setter
@@ -448,20 +449,20 @@ impl Incoming {
     // pub fn get_客户号(&self) -> &String {
     //     &self.客户号
     // }
-    pub fn get_日期(&self) -> &String {
-        &self.日期
+    pub fn get_id(&self) -> &u32 {
+        &self.id
     }
-    pub fn get_收款人账号(&self) -> &String {
-        &self.收款人账号
+    pub fn get_date(&self) -> &String {
+        &self.date
     }
-    pub fn get_付款人账号(&self) -> &String {
-        &self.付款人账号
+    pub fn get_from_id(&self) -> &String {
+        &self.from_id
     }
     pub fn get_收款人名称(&self) -> &String {
-        &self.收款人名称
+        &self.name
     }
-    pub fn get_付款人名称(&self) -> &String {
-        &self.付款人名称
+    pub fn get_from_name(&self) -> &String {
+        &self.from_name
     }
     // pub fn get_收款人开户行(&self) -> &String {
     //     &self.收款人开户行
@@ -469,20 +470,20 @@ impl Incoming {
     // pub fn get_付款人开户行(&self) -> &String {
     //     &self.付款人开户行
     // }
-    pub fn get_金额(&self) -> &f64 {
-        &self.金额
+    pub fn get_ammount(&self) -> &f64 {
+        &self.ammount
     }
     // pub fn get_金额大写(&self) -> &String {
     //     &self.金额大写
     // }
-    pub fn get_用途(&self) -> &String {
-        &self.用途
+    pub fn get_usage(&self) -> &String {
+        &self.usage
     }
-    pub fn get_备注(&self) -> &String {
-        &self.备注
+    pub fn get_comment(&self) -> &String {
+        &self.comment
     }
-    pub fn get_附言(&self) -> &String {
-        &self.附言
+    pub fn get_postscript(&self) -> &String {
+        &self.postscript
     }
     // pub fn get_报文种类(&self) -> &String {
     //     &self.报文种类
@@ -548,18 +549,18 @@ impl Incoming {
     //     &self.打印次数
     // }
 }
-impl ToRow for Incoming {
+impl<'a> ToRow for &'a Incoming {
     fn to_row(&self) -> Row {
         row![
-            self.日期.as_ref(),
-            self.收款人账号.as_ref(),
-            self.付款人账号.as_ref(),
-            self.收款人名称.as_ref(),
-            self.付款人名称.as_ref(),
-            self.金额,
-            self.用途.as_ref(),
-            self.备注.as_ref(),
-            self.附言.as_ref()
+            self.date.as_ref(),
+            self.id as f64,
+            self.from_id.as_ref(),
+            self.name.as_ref(),
+            self.from_name.as_ref(),
+            self.ammount,
+            self.usage.as_ref(),
+            self.comment.as_ref(),
+            self.postscript.as_ref()
         ]
     }
 }

@@ -1,5 +1,5 @@
 pub mod balance;
-pub mod from_txt;
+pub mod from_file;
 pub mod incoming;
 pub mod outgoing;
 pub mod reconcile;

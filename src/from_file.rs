@@ -35,19 +35,10 @@ where
     }
 }
 
-// #[test]
-// fn test_txt_reader() {
-//     #[derive(Debug, PartialEq)]
-//     struct Test(String);
-//     impl<P: AsRef<Path>> TxtReader<P> for Test {}
-//     impl<P: AsRef<Path>> FromTxt<P> for Test {
-//         fn from_str(context: &str) -> Result<Self> {
-//             Ok(Self(context.to_string()))
-//         }
-//     }
-//     let context = Test::from_txt("readme.md");
-//     assert_eq!(
-//         context.unwrap(),
-//         Test("\"# sars\"\r\nsub_account_reconcile_system\r\n".to_string())
-//     )
-// }
+pub trait FromExcel<P>
+where
+    P: AsRef<Path>,
+    Self: Sized,
+{
+    fn from_excel(path: P) -> anyhow::Result<Self>;
+}
