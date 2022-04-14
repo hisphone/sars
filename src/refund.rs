@@ -1,3 +1,4 @@
-pub type Refunds = Vec<Refund>;
+#[derive(Default)]
+pub struct Refunds(Vec<Refund>);
 
 pub struct Refund;

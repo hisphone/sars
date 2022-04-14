@@ -1,62 +1,49 @@
+use std::cell::{Ref, RefCell};
+
 use crate::{
     balance::Balances, incoming::Incomings, outgoing::Outgoings, refund::Refunds, start::Starts,
 };
 
-pub struct SubAccount<'sa> {
-    info: &'sa SubInfos,
-    start: &'sa Starts,
-    incoming: &'sa Incomings,
-    outgoing: &'sa Outgoings,
-    refund: &'sa Refunds,
-    balance: &'sa Balances,
+pub struct SubAccount {
+    info: RefCell<SubInfos>,
+    start: RefCell<Starts>,
+    incoming: RefCell<Incomings>,
+    outgoing: RefCell<Outgoings>,
+    refund: RefCell<Refunds>,
+    balance: RefCell<Balances>,
 }
 
-impl<'sa, 'r, 'b, 'o, 'i, 's, 'si> SubAccount<'sa>
-where
-    'r: 'sa,
-    'b: 'sa,
-    'o: 'sa,
-    'i: 'sa,
-    's: 'sa,
-    'si: 'sa,
-{
-    pub fn new(
-        info: &'si SubInfos,
-        start: &'s Starts,
-        incoming: &'i Incomings,
-        outgoing: &'o Outgoings,
-        refund: &'r Refunds,
-        balance: &'b Balances,
-    ) -> Self {
+impl SubAccount {
+    pub fn new() -> Self {
         Self {
-            info,
-            start,
-            incoming,
-            outgoing,
-            refund,
-            balance,
+            info: RefCell::new(SubInfos::default()),
+            start: RefCell::new(Starts::default()),
+            incoming: RefCell::new(Incomings::default()),
+            outgoing: RefCell::new(Outgoings::default()),
+            refund: RefCell::new(Refunds::default()),
+            balance: RefCell::new(Balances::default()),
         }
     }
-    pub fn get_info(&self) -> &'sa SubInfos {
-        self.info
+    pub fn get_info(&self) -> Ref<SubInfos> {
+        self.info.borrow()
     }
-    pub fn get_start(&self) -> &'sa Starts {
-        self.start
+    pub fn get_start(&self) -> Ref<Starts> {
+        self.start.borrow()
     }
-    pub fn get_incoming(&self) -> &'sa Incomings {
-        self.incoming
+    pub fn get_incoming(&self) -> Ref<Incomings> {
+        self.incoming.borrow()
     }
-    pub fn get_outgoing(&self) -> &'sa Outgoings {
-        self.outgoing
+    pub fn get_outgoing(&self) -> Ref<Outgoings> {
+        self.outgoing.borrow()
     }
-    pub fn get_refund(&self) -> &'sa Refunds {
-        self.refund
+    pub fn get_refund(&self) -> Ref<Refunds> {
+        self.refund.borrow()
     }
-    pub fn get_balance(&self) -> &'sa Balances {
-        self.balance
+    pub fn get_balance(&self) -> Ref<Balances> {
+        self.balance.borrow()
     }
 }
-
-pub type SubInfos = Vec<SubInfo>;
+#[derive(Default)]
+pub struct SubInfos(Vec<SubInfo>);
 
 pub struct SubInfo;

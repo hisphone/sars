@@ -1,2 +1,3 @@
-pub type Starts = Vec<Start>;
+#[derive(Default)]
+pub struct Starts(Vec<Start>);
 pub struct Start;
