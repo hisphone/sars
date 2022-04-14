@@ -1,11 +1,7 @@
-use sub_account_reconcile_system::{from_txt::FromTxt, incoming::Incomings, to_excel::IntoExcel};
+use sub_account_reconcile_system::sub_account::SubInfos;
 
 fn main() {
-    let a = Incomings::from_txt("王静.txt").unwrap();
-    // let b = a
-    //     .into_iter()
-    //     .filter(|i| i.get_收款人账号() == "102831264647")
-    //     .collect::<Vec<_>>();
+    let a = SubInfos::from_excel(r"F:\下载\虚拟子账户明细 .xls").unwrap();
 
-    a.into_excel("xxx.xlsx")
+    println!("{:?}", a.as_ref().iter().count());
 }
