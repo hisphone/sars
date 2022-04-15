@@ -2,10 +2,11 @@ use std::path::Path;
 
 use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xls};
 use serde::{Deserialize, Serialize};
+use simple_excel_writer::{row, Row, Workbook};
 
 use crate::{
     balance::Balances, from_file::FromExcel, incoming::Incomings, outgoing::Outgoings,
-    refund::Refunds, start::Starts,
+    refund::Refunds, start::Starts, to_excel::ToRow,
 };
 
 #[derive(Debug)]
@@ -35,6 +36,134 @@ impl SubAccount {
             refund,
             balance,
         }
+    }
+    pub fn reconcile(&self) {
+        let a = self
+            .info
+            .as_ref()
+            .iter()
+            .map(|si| {
+                let id = &si.id;
+                let name = &si.name;
+                let start = match self
+                    .get_start()
+                    .as_ref()
+                    .iter()
+                    .find(|start| start.get_id() == *id)
+                {
+                    Some(s) => s.get_start(),
+                    None => 0.0,
+                };
+                let incoming_iter = self
+                    .get_incoming()
+                    .as_ref()
+                    .iter()
+                    .filter(|i| i.get_id() == id);
+                let incoming = incoming_iter.clone().map(|i| i.get_ammount()).sum::<f64>();
+                let incomings = incoming_iter.map(|i| i.to_row()).collect::<Vec<_>>();
+                let outgoing_iter = self
+                    .get_outgoing()
+                    .as_ref()
+                    .iter()
+                    .filter(|o| o.get_id() == *id);
+                let outgoing = outgoing_iter.clone().map(|o| o.get_outgoing()).sum::<f64>();
+                let outgoings = outgoing_iter.map(|o| o.to_row()).collect::<Vec<_>>();
+                let refund_iter = self
+                    .get_refund()
+                    .as_ref()
+                    .iter()
+                    .filter(|r| r.get_id() == *id);
+                let refund = refund_iter.clone().map(|r| r.get_refund()).sum::<f64>();
+                let refunds = refund_iter.map(|r| r.to_row()).collect::<Vec<_>>();
+                let balance = match self
+                    .get_balance()
+                    .as_ref()
+                    .iter()
+                    .find(|balance| balance.get_id() == *id)
+                {
+                    Some(b) => b.get_ammount(),
+                    None => 0.0,
+                };
+                let balance_c = start + incoming - outgoing + refund;
+
+                let mut wb = Workbook::create(
+                    std::env::current_exe()
+                        .unwrap()
+                        .with_file_name(name.clone() + ".xlsx")
+                        .to_str()
+                        .unwrap(),
+                );
+                let mut sheet = wb.create_sheet("sheet1");
+                wb.write_sheet(&mut sheet, move |sheet_writer| {
+                    let sw = sheet_writer;
+                    sw.append_row(row![
+                        "账号",
+                        "账户",
+                        "年初余额",
+                        "入账总计",
+                        "支出总计",
+                        "退款总计",
+                        "余额",
+                        "实际余额"
+                    ])?;
+                    sw.append_row(row![
+                        *id as f64,
+                        name.as_str(),
+                        start,
+                        incoming,
+                        outgoing,
+                        refund,
+                        balance_c,
+                        balance
+                    ])?;
+                    Ok(())
+                })
+                .unwrap();
+                let mut sheet1 = wb.create_sheet("sheet2");
+                wb.write_sheet(&mut sheet1, move |sheet_writer| {
+                    let sw = sheet_writer;
+
+                    sw.append_row(row!["入账明细"])?;
+                    sw.append_row(row![
+                        "日期",
+                        "收款人账号",
+                        "付款人账号",
+                        "收款人名称",
+                        "付款人名称",
+                        "金额",
+                        "用途",
+                        "备注",
+                        "附言"
+                    ])?;
+                    for row in incomings {
+                        sw.append_row(row)?;
+                    }
+                    sw.append_row(row!["支出明细"])?;
+                    sw.append_row(row!["账号", "账户", "日期", "金额"])?;
+                    for row in outgoings {
+                        sw.append_row(row)?;
+                    }
+                    Ok(())
+                })
+                .unwrap();
+
+                let mut sheet2 = wb.create_sheet("sheet3");
+                wb.write_sheet(&mut sheet2, move |sheet_writer| {
+                    let sw = sheet_writer;
+                    sw.append_row(row!["退款明细"])?;
+                    sw.append_row(row!["账号", "账户", "日期", "金额"])?;
+                    for row in refunds {
+                        sw.append_row(row)?;
+                    }
+                    Ok(())
+                })
+                .unwrap();
+                wb.close().expect("close excel error!");
+                (id, name, start + incoming - outgoing + refund, balance)
+            })
+            .collect::<Vec<_>>();
+
+        println!("{a:#?}");
     }
     pub fn get_info(&self) -> &SubInfos {
         &self.info

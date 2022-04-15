@@ -144,6 +144,15 @@ pub struct Balance {
     ammount: f64,
 }
 impl Balance {
+    pub fn get_id(&self) -> u32 {
+        self.id
+    }
+    pub fn get_name(&self) -> &String {
+        &self.name
+    }
+    pub fn get_ammount(&self) -> f64 {
+        self.ammount
+    }
     pub fn set_id(&mut self, setter: u32) {
         self.id = setter
     }

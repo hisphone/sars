@@ -1,5 +1,6 @@
-use crate::from_file::FromExcel;
+use crate::{from_file::FromExcel, to_excel::ToRow};
 use calamine::{open_workbook, DataType, Reader, Xlsx};
+use simple_excel_writer::{row, Row};
 use std::path::Path;
 
 #[derive(Debug, Default)]
@@ -36,31 +37,23 @@ where
             match row {
                 (
                     DataType::String(date),
-                    DataType::String(id),
+                    DataType::Float(id),
                     DataType::String(name),
-                    DataType::String(outgoing),
+                    DataType::Float(outgoing),
                 ) => {
                     temp = date.to_string();
-                    let outgoing = Outgoing::new(
-                        id.parse().unwrap(),
-                        name.to_string(),
-                        temp.to_string(),
-                        outgoing.parse().unwrap(),
-                    );
+                    let outgoing =
+                        Outgoing::new(*id as u32, name.to_string(), temp.to_string(), *outgoing);
                     outgoings.as_mut().push(outgoing);
                 }
                 (
                     DataType::Empty,
-                    DataType::String(id),
+                    DataType::Float(id),
                     DataType::String(name),
-                    DataType::String(outgoing),
+                    DataType::Float(outgoing),
                 ) => {
-                    let outgoing = Outgoing::new(
-                        id.parse().unwrap(),
-                        name.to_string(),
-                        temp.to_string(),
-                        outgoing.parse().unwrap(),
-                    );
+                    let outgoing =
+                        Outgoing::new(*id as u32, name.to_string(), temp.to_string(), *outgoing);
                     outgoings.as_mut().push(outgoing);
                 }
                 _ => println!("{row:?}"),
@@ -97,5 +90,15 @@ impl Outgoing {
     }
     pub fn get_outgoing(&self) -> f64 {
         self.outgoing
+    }
+}
+impl ToRow for Outgoing {
+    fn to_row(&self) -> Row {
+        row![
+            self.id as f64,
+            self.get_name().as_str(),
+            self.get_date().as_str(),
+            self.outgoing
+        ]
     }
 }
