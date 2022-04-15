@@ -1,8 +1,6 @@
-use std::path::Path;
-
-use calamine::{open_workbook, DataType, Reader, Xlsx};
-
 use crate::from_file::FromExcel;
+use calamine::{open_workbook, DataType, Reader, Xlsx};
+use std::path::Path;
 
 #[derive(Debug, Default)]
 pub struct Starts(Vec<Start>);
