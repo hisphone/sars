@@ -93,7 +93,7 @@ impl SubAccount {
                         .to_str()
                         .unwrap(),
                 );
-                let mut sheet = wb.create_sheet("sheet1");
+                let mut sheet = wb.create_sheet("总账");
                 wb.write_sheet(&mut sheet, move |sheet_writer| {
                     let sw = sheet_writer;
                     sw.append_row(row![
@@ -119,7 +119,7 @@ impl SubAccount {
                     Ok(())
                 })
                 .unwrap();
-                let mut sheet1 = wb.create_sheet("sheet2");
+                let mut sheet1 = wb.create_sheet("入账明细");
                 wb.write_sheet(&mut sheet1, move |sheet_writer| {
                     let sw = sheet_writer;
 
@@ -138,6 +138,12 @@ impl SubAccount {
                     for row in incomings {
                         sw.append_row(row)?;
                     }
+                    Ok(())
+                })
+                .unwrap();
+                let mut sheet2 = wb.create_sheet("支出明细");
+                wb.write_sheet(&mut sheet2, move |sheet_writer| {
+                    let sw = sheet_writer;
                     sw.append_row(row!["支出明细"])?;
                     sw.append_row(row!["账号", "账户", "日期", "金额"])?;
                     for row in outgoings {
@@ -147,8 +153,8 @@ impl SubAccount {
                 })
                 .unwrap();
 
-                let mut sheet2 = wb.create_sheet("sheet3");
-                wb.write_sheet(&mut sheet2, move |sheet_writer| {
+                let mut sheet3 = wb.create_sheet("退款明细");
+                wb.write_sheet(&mut sheet3, move |sheet_writer| {
                     let sw = sheet_writer;
                     sw.append_row(row!["退款明细"])?;
                     sw.append_row(row!["账号", "账户", "日期", "金额"])?;
