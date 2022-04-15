@@ -3,7 +3,6 @@ use std::{
     path::Path,
     slice::{Iter, IterMut},
     str::FromStr,
-    vec::IntoIter,
 };
 
 use simple_excel_writer::{row, Row};

@@ -2,10 +2,8 @@ use anyhow::Result;
 use simple_excel_writer::{row, Row};
 use std::{
     convert::Infallible,
-    io::Read,
     slice::{Iter, IterMut},
     str::FromStr,
-    vec::IntoIter,
 };
 
 use crate::{

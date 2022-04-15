@@ -27,12 +27,12 @@ where
             .worksheet_range_at(0)
             .ok_or(anyhow::Error::msg("range err"))??;
         let mut starts = Starts::default();
-        for row in worksheet.rows().skip(5) {
-            let id = &row[0];
-            let name = &row[1];
-            let start = &row[5];
-
-            match (id, name, start) {
+        for row in worksheet
+            .rows()
+            .skip(5)
+            .map(|row| (&row[0], &row[1], &row[5]))
+        {
+            match row {
                 (DataType::String(id), DataType::String(name), DataType::Float(start)) => {
                     let start = Start::new(id.parse().unwrap(), name.to_string(), *start);
                     starts.as_mut().push(start);
@@ -41,7 +41,7 @@ where
                     let start = Start::new(id.parse().unwrap(), name.to_string(), 0.0);
                     starts.as_mut().push(start);
                 }
-                _ => (),
+                _ => println!("{row:?}"),
             }
         }
 
