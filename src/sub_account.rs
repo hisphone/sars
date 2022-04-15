@@ -1,7 +1,4 @@
-use std::{
-    cell::{Ref, RefCell},
-    path::Path,
-};
+use std::path::Path;
 
 use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xls};
 use serde::{Deserialize, Serialize};
@@ -11,43 +8,69 @@ use crate::{
     refund::Refunds, start::Starts,
 };
 
+#[derive(Debug)]
 pub struct SubAccount {
-    info: RefCell<SubInfos>,
-    start: RefCell<Starts>,
-    incoming: RefCell<Incomings>,
-    outgoing: RefCell<Outgoings>,
-    refund: RefCell<Refunds>,
-    balance: RefCell<Balances>,
+    info: SubInfos,
+    start: Starts,
+    incoming: Incomings,
+    outgoing: Outgoings,
+    refund: Refunds,
+    balance: Balances,
 }
 
 impl SubAccount {
-    pub fn new() -> Self {
+    pub fn new(
+        info: SubInfos,
+        start: Starts,
+        incoming: Incomings,
+        outgoing: Outgoings,
+        refund: Refunds,
+        balance: Balances,
+    ) -> Self {
         Self {
-            info: RefCell::new(SubInfos::default()),
-            start: RefCell::new(Starts::default()),
-            incoming: RefCell::new(Incomings::default()),
-            outgoing: RefCell::new(Outgoings::default()),
-            refund: RefCell::new(Refunds::default()),
-            balance: RefCell::new(Balances::default()),
+            info,
+            start,
+            incoming,
+            outgoing,
+            refund,
+            balance,
         }
     }
-    pub fn get_info(&self) -> Ref<SubInfos> {
-        self.info.borrow()
+    pub fn get_info(&self) -> &SubInfos {
+        &self.info
     }
-    pub fn get_start(&self) -> Ref<Starts> {
-        self.start.borrow()
+    pub fn get_start(&self) -> &Starts {
+        &self.start
     }
-    pub fn get_incoming(&self) -> Ref<Incomings> {
-        self.incoming.borrow()
+    pub fn get_incoming(&self) -> &Incomings {
+        &self.incoming
     }
-    pub fn get_outgoing(&self) -> Ref<Outgoings> {
-        self.outgoing.borrow()
+    pub fn get_outgoing(&self) -> &Outgoings {
+        &self.outgoing
     }
-    pub fn get_refund(&self) -> Ref<Refunds> {
-        self.refund.borrow()
+    pub fn get_refund(&self) -> &Refunds {
+        &self.refund
     }
-    pub fn get_balance(&self) -> Ref<Balances> {
-        self.balance.borrow()
+    pub fn get_balance(&self) -> &Balances {
+        &self.balance
+    }
+    pub fn set_info(&mut self, subinfos: SubInfos) {
+        self.info = subinfos
+    }
+    pub fn set_start(&mut self, start: Starts) {
+        self.start = start
+    }
+    pub fn set_incoming(&mut self, incoming: Incomings) {
+        self.incoming = incoming
+    }
+    pub fn set_outgoing(&mut self, outgoing: Outgoings) {
+        self.outgoing = outgoing
+    }
+    pub fn set_refund(&mut self, refund: Refunds) {
+        self.refund = refund
+    }
+    pub fn set_balance(&mut self, balance: Balances) {
+        self.balance = balance
     }
 }
 #[derive(Default, Debug)]
