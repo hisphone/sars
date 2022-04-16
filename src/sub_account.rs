@@ -1,12 +1,8 @@
-use std::path::Path;
-
-use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xls};
-use serde::{Deserialize, Serialize};
-use simple_excel_writer::{row, Row, Workbook};
+use simple_excel_writer::{row, Column, Row, Workbook};
 
 use crate::{
-    balance::Balances, from_file::FromExcel, incoming::Incomings, outgoing::Outgoings,
-    refund::Refunds, start::Starts, to_excel::ToRow,
+    balance::Balances, incoming::Incomings, outgoing::Outgoings, refund::Refunds, start::Starts,
+    sub_info::SubInfos, to_excel::ToRow,
 };
 
 #[derive(Debug)]
@@ -43,13 +39,13 @@ impl SubAccount {
             .as_ref()
             .iter()
             .map(|si| {
-                let id = &si.id;
-                let name = &si.name;
+                let id = si.get_id();
+                let name = si.get_name();
                 let start = match self
                     .get_start()
                     .as_ref()
                     .iter()
-                    .find(|start| start.get_id() == *id)
+                    .find(|start| start.get_id() == id)
                 {
                     Some(s) => s.get_start(),
                     None => 0.0,
@@ -65,23 +61,23 @@ impl SubAccount {
                     .get_outgoing()
                     .as_ref()
                     .iter()
-                    .filter(|o| o.get_id() == *id);
+                    .filter(|o| o.get_id() == id);
                 let outgoing = outgoing_iter.clone().map(|o| o.get_outgoing()).sum::<f64>();
                 let outgoings = outgoing_iter.map(|o| o.to_row()).collect::<Vec<_>>();
                 let refund_iter = self
                     .get_refund()
                     .as_ref()
                     .iter()
-                    .filter(|r| r.get_id() == *id);
+                    .filter(|r| r.get_id() == id);
                 let refund = refund_iter.clone().map(|r| r.get_refund()).sum::<f64>();
                 let refunds = refund_iter.map(|r| r.to_row()).collect::<Vec<_>>();
                 let balance = match self
                     .get_balance()
                     .as_ref()
                     .iter()
-                    .find(|balance| balance.get_id() == *id)
+                    .find(|balance| balance.get_id() == id)
                 {
-                    Some(b) => b.get_ammount(),
+                    Some(b) => b.get_balance(),
                     None => 0.0,
                 };
                 let balance_c = start + incoming - outgoing + refund;
@@ -94,6 +90,14 @@ impl SubAccount {
                         .unwrap(),
                 );
                 let mut sheet = wb.create_sheet("总账");
+                sheet.add_column(Column { width: 20.0 });
+                sheet.add_column(Column { width: 40.0 });
+                sheet.add_column(Column { width: 15.0 });
+                sheet.add_column(Column { width: 15.0 });
+                sheet.add_column(Column { width: 15.0 });
+                sheet.add_column(Column { width: 15.0 });
+                sheet.add_column(Column { width: 15.0 });
+                sheet.add_column(Column { width: 15.0 });
                 wb.write_sheet(&mut sheet, move |sheet_writer| {
                     let sw = sheet_writer;
                     sw.append_row(row![
@@ -107,7 +111,7 @@ impl SubAccount {
                         "实际余额"
                     ])?;
                     sw.append_row(row![
-                        *id as f64,
+                        id.to_string(),
                         name.as_str(),
                         start,
                         incoming,
@@ -119,16 +123,25 @@ impl SubAccount {
                     Ok(())
                 })
                 .unwrap();
+
                 let mut sheet1 = wb.create_sheet("入账明细");
+                sheet1.add_column(Column { width: 15.0 });
+                sheet1.add_column(Column { width: 19.0 });
+                sheet1.add_column(Column { width: 35.0 });
+                sheet1.add_column(Column { width: 19.0 });
+                sheet1.add_column(Column { width: 35.0 });
+                sheet1.add_column(Column { width: 15.0 });
+                sheet1.add_column(Column { width: 25.0 });
+                sheet1.add_column(Column { width: 25.0 });
+                sheet1.add_column(Column { width: 25.0 });
                 wb.write_sheet(&mut sheet1, move |sheet_writer| {
                     let sw = sheet_writer;
 
-                    sw.append_row(row!["入账明细"])?;
                     sw.append_row(row![
                         "日期",
                         "收款人账号",
-                        "付款人账号",
                         "收款人名称",
+                        "付款人账号",
                         "付款人名称",
                         "金额",
                         "用途",
@@ -141,11 +154,15 @@ impl SubAccount {
                     Ok(())
                 })
                 .unwrap();
+
                 let mut sheet2 = wb.create_sheet("支出明细");
+                sheet2.add_column(Column { width: 20.0 });
+                sheet2.add_column(Column { width: 20.0 });
+                sheet2.add_column(Column { width: 40.0 });
+                sheet2.add_column(Column { width: 20.0 });
                 wb.write_sheet(&mut sheet2, move |sheet_writer| {
                     let sw = sheet_writer;
-                    sw.append_row(row!["支出明细"])?;
-                    sw.append_row(row!["账号", "账户", "日期", "金额"])?;
+                    sw.append_row(row!["日期", "账号", "账户", "金额"])?;
                     for row in outgoings {
                         sw.append_row(row)?;
                     }
@@ -154,10 +171,13 @@ impl SubAccount {
                 .unwrap();
 
                 let mut sheet3 = wb.create_sheet("退款明细");
+                sheet3.add_column(Column { width: 20.0 });
+                sheet3.add_column(Column { width: 20.0 });
+                sheet3.add_column(Column { width: 40.0 });
+                sheet3.add_column(Column { width: 20.0 });
                 wb.write_sheet(&mut sheet3, move |sheet_writer| {
                     let sw = sheet_writer;
-                    sw.append_row(row!["退款明细"])?;
-                    sw.append_row(row!["账号", "账户", "日期", "金额"])?;
+                    sw.append_row(row!["日期", "账号", "账户", "金额"])?;
                     for row in refunds {
                         sw.append_row(row)?;
                     }
@@ -206,63 +226,5 @@ impl SubAccount {
     }
     pub fn set_balance(&mut self, balance: Balances) {
         self.balance = balance
-    }
-}
-#[derive(Default, Debug)]
-pub struct SubInfos(Vec<SubInfo>);
-
-impl AsRef<Vec<SubInfo>> for SubInfos {
-    fn as_ref(&self) -> &Vec<SubInfo> {
-        &self.0
-    }
-}
-
-impl AsMut<Vec<SubInfo>> for SubInfos {
-    fn as_mut(&mut self) -> &mut Vec<SubInfo> {
-        &mut self.0
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Default)]
-pub struct SubInfo {
-    #[serde(rename = "单位编码")]
-    #[serde(deserialize_with = "de_opt_u32")]
-    pub id: u32,
-    #[serde(rename = "虚拟子账户名称")]
-    name: String,
-    #[serde(rename = "VA")]
-    va: String,
-}
-fn de_opt_u32<'de, D>(deserializer: D) -> Result<u32, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let data_type = calamine::DataType::deserialize(deserializer);
-    match data_type {
-        Ok(calamine::DataType::Float(f)) => Ok(f as u32),
-        Ok(calamine::DataType::Int(i)) => Ok(i as u32),
-        Ok(calamine::DataType::String(s)) => Ok(s.parse().unwrap_or(0)),
-        _ => Ok(0),
-    }
-}
-
-impl<P> FromExcel<P> for SubInfos
-where
-    P: AsRef<Path>,
-{
-    fn from_excel(path: P) -> anyhow::Result<Self> {
-        let mut workbook: Xls<_> = open_workbook(path).unwrap();
-        let worksheet = workbook
-            .worksheet_range_at(0)
-            .ok_or(anyhow::Error::msg("range err"))??;
-        let end = worksheet.end().ok_or(anyhow::Error::msg("range err"))?;
-        let range = worksheet.range((1, 4), end);
-        let iter = RangeDeserializerBuilder::new()
-            .has_headers(true)
-            .from_range::<_, SubInfo>(&range)?
-            .filter_map(|res| res.ok())
-            .collect::<Vec<_>>();
-
-        Ok(Self(iter))
     }
 }

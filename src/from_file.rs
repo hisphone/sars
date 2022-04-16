@@ -1,5 +1,7 @@
 use anyhow::{Context, Result};
+use calamine::{open_workbook_auto, RangeDeserializerBuilder, Reader};
 use encoding::{all::GB18030, DecoderTrap, Encoding};
+use serde::Deserialize;
 use std::{io::Read, path::Path, str::FromStr};
 
 pub trait TxtReader<P: AsRef<Path>> {
@@ -41,4 +43,27 @@ where
     Self: Sized,
 {
     fn from_excel(path: P) -> anyhow::Result<Self>;
+}
+
+pub trait FromFormatedExcel<'a, P>
+where
+    P: AsRef<Path>,
+    Self: Sized + IntoIterator + From<Vec<<Self as IntoIterator>::Item>>,
+{
+    fn from_formated_excel(path: P) -> anyhow::Result<Self>
+    where
+        for<'de> <Self as IntoIterator>::Item: Deserialize<'de>,
+    {
+        let mut workbook = open_workbook_auto(path).unwrap();
+        let worksheet = workbook
+            .worksheet_range_at(0)
+            .ok_or(anyhow::Error::msg("range err"))??;
+        let iter = RangeDeserializerBuilder::new()
+            .has_headers(true)
+            .from_range::<_, Self::Item>(&worksheet)?
+            .filter_map(|res| res.ok())
+            .collect::<Vec<_>>();
+
+        Ok(Self::from(iter))
+    }
 }

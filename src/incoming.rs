@@ -1,14 +1,11 @@
 use anyhow::Result;
-use simple_excel_writer::{row, Row};
-use std::{
-    convert::Infallible,
-    slice::{Iter, IterMut},
-    str::FromStr,
-};
+use serde::{Deserialize, Serialize};
+use simple_excel_writer::{row, Column, Row};
+use std::{convert::Infallible, slice::Iter, str::FromStr, vec::IntoIter};
 
 use crate::{
-    from_file::{FromTxt, TxtReader},
-    to_excel::{Header, IntoExcel, Title, ToRow},
+    from_file::{FromFormatedExcel, FromTxt, TxtReader},
+    to_excel::{Columns, Header, SheetName, ToExcel, ToRow},
 };
 
 const UNUSEABLE:[&str;12] = ["", " ", "1", " --------------------------------------------------------------------------------------------------------", "                                             国内支付业务收款回单"," 本机构吸收的本外币存款依照《存款保险条例》受到保护。", "             \u{3000}                                                    \u{3000}                                    \u{3000}", "           \u{3000}                                                    \u{3000}                                      \u{3000}", "           \u{3000}                                                    \u{3000}                                        ", "                                                               \u{3000}                                        \u{3000}", "  \u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}自助打印，请避免重复", "  \u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}\u{3000}自助打印，请避免重复\u{3000}"];
@@ -56,9 +53,6 @@ impl Incomings {
     pub fn iter(&self) -> Iter<'_, Incoming> {
         self.into_iter()
     }
-    pub fn iter_mut(&mut self) -> IterMut<'_, Incoming> {
-        self.into_iter()
-    }
 }
 
 impl<'a> Header for &'a Incomings {
@@ -66,8 +60,8 @@ impl<'a> Header for &'a Incomings {
         row![
             "日期",
             "收款人账号",
-            "付款人账号",
             "收款人名称",
+            "付款人账号",
             "付款人名称",
             "金额",
             "用途",
@@ -76,12 +70,27 @@ impl<'a> Header for &'a Incomings {
         ]
     }
 }
-impl<'a> Title for &'a Incomings {
-    fn title(&self) -> &'static str {
-        "收入"
+impl<'a> SheetName for &'a Incomings {
+    fn sheet_name(&self) -> &'static str {
+        "入账明细"
     }
 }
-impl<'a> IntoExcel for &'a Incomings {}
+impl<'a> Columns for &'a Incomings {
+    fn column(&self) -> Vec<simple_excel_writer::Column> {
+        vec![
+            Column { width: 15.0 },
+            Column { width: 19.0 },
+            Column { width: 35.0 },
+            Column { width: 19.0 },
+            Column { width: 35.0 },
+            Column { width: 15.0 },
+            Column { width: 25.0 },
+            Column { width: 25.0 },
+            Column { width: 25.0 },
+        ]
+    }
+}
+impl<'a> ToExcel for &'a Incomings {}
 impl<P> TxtReader<P> for Incomings where P: AsRef<std::path::Path> {}
 
 impl<P> FromTxt<P> for Incomings where P: AsRef<std::path::Path> {}
@@ -107,13 +116,13 @@ impl<'a> IntoIterator for &'a Incomings {
         self.as_ref().iter()
     }
 }
-impl<'a> IntoIterator for &'a mut Incomings {
-    type Item = &'a mut Incoming;
+impl IntoIterator for Incomings {
+    type Item = Incoming;
 
-    type IntoIter = IterMut<'a, Incoming>;
+    type IntoIter = IntoIter<Incoming>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.as_mut().iter_mut()
+        self.0.into_iter()
     }
 }
 impl FromStr for Incomings {
@@ -191,18 +200,14 @@ impl FromStr for Incomings {
                         .chars()
                         .filter(char::is_ascii_digit)
                         .collect::<String>();
-                    let account = if account != "102831264647" {
-                        account.strip_prefix("102831264647").unwrap().to_string()
-                    } else {
-                        "0".to_string()
-                    };
                     incomings[index].set_id(account.parse().unwrap())
                 }
                 line if line.starts_with("付款人账号") => {
                     incomings[index].set_from_id(line.split_once("：").unwrap().1.to_string())
                 }
-                line if line.starts_with("收款人名称") => incomings[index]
-                    .set_收款人名称(line.split_once("：").unwrap().1.to_string()),
+                line if line.starts_with("收款人名称") => {
+                    incomings[index].set_name(line.split_once("：").unwrap().1.to_string())
+                }
                 line if line.starts_with("付款人名称") => {
                     incomings[index].set_from_name(line.split_once("：").unwrap().1.to_string())
                 }
@@ -212,7 +217,7 @@ impl FromStr for Incomings {
                 line if line.starts_with("付款人开户行") => {
                     // incomings[index].set_付款人开户行(line.split_once("：").unwrap().1.to_string())
                 }
-                line if line.starts_with("金额：") => incomings[index].set_ammount(
+                line if line.starts_with("金额：") => incomings[index].set_incoming(
                     line.chars()
                         .filter(|c| c.is_ascii_digit() || *c == '.')
                         .collect::<String>()
@@ -303,20 +308,36 @@ impl FromStr for Incomings {
         Ok(Self(incomings))
     }
 }
-#[derive(Debug, Default, Clone)]
+impl From<Vec<Incoming>> for Incomings {
+    fn from(v: Vec<Incoming>) -> Self {
+        Self(v)
+    }
+}
+impl<P: std::convert::AsRef<std::path::Path>> FromFormatedExcel<'_, P> for Incomings {}
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct Incoming {
     // 客户号: String,
-    id: u32,
+    #[serde(rename = "日期")]
     date: String,
-    from_id: String,
+    #[serde(rename = "收款人账号")]
+    #[serde(deserialize_with = "de_opt_u64")]
+    id: u64,
+    #[serde(rename = "收款人名称")]
     name: String,
+    #[serde(rename = "付款人账号")]
+    from_id: String,
+    #[serde(rename = "付款人名称")]
     from_name: String,
     // 收款人开户行: String,
     // 付款人开户行: String,
-    ammount: f64,
+    #[serde(rename = "金额")]
+    incoming: f64,
     // 金额大写: String,
+    #[serde(rename = "用途")]
     usage: String,
+    #[serde(rename = "备注")]
     comment: String,
+    #[serde(rename = "附言")]
     postscript: String,
     // 报文种类: String,
     // 业务类型: String,
@@ -340,12 +361,21 @@ pub struct Incoming {
     // 打印时间: String,
     // 打印次数: String,
 }
-
+fn de_opt_u64<'de, D>(deserializer: D) -> Result<u64, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let data_type = calamine::DataType::deserialize(deserializer);
+    match data_type {
+        Ok(calamine::DataType::String(s)) => Ok(s.parse().unwrap()),
+        _ => panic!("refund u64 parse error"),
+    }
+}
 impl Incoming {
     // pub fn set_客户号(&mut self, setter: String) {
     //     self.客户号 = setter
     // }
-    pub fn set_id(&mut self, setter: u32) {
+    pub fn set_id(&mut self, setter: u64) {
         self.id = setter
     }
     pub fn set_date(&mut self, setter: String) {
@@ -354,7 +384,7 @@ impl Incoming {
     pub fn set_from_id(&mut self, setter: String) {
         self.from_id = setter
     }
-    pub fn set_收款人名称(&mut self, setter: String) {
+    pub fn set_name(&mut self, setter: String) {
         self.name = setter
     }
     pub fn set_from_name(&mut self, setter: String) {
@@ -366,8 +396,8 @@ impl Incoming {
     // pub fn set_付款人开户行(&mut self, setter: String) {
     //     self.付款人开户行 = setter
     // }
-    pub fn set_ammount(&mut self, setter: f64) {
-        self.ammount = setter
+    pub fn set_incoming(&mut self, setter: f64) {
+        self.incoming = setter
     }
     // pub fn set_金额大写(&mut self, setter: String) {
     //     self.金额大写 = setter
@@ -447,8 +477,8 @@ impl Incoming {
     // pub fn get_客户号(&self) -> &String {
     //     &self.客户号
     // }
-    pub fn get_id(&self) -> &u32 {
-        &self.id
+    pub fn get_id(&self) -> u64 {
+        self.id
     }
     pub fn get_date(&self) -> &String {
         &self.date
@@ -468,8 +498,8 @@ impl Incoming {
     // pub fn get_付款人开户行(&self) -> &String {
     //     &self.付款人开户行
     // }
-    pub fn get_ammount(&self) -> &f64 {
-        &self.ammount
+    pub fn get_ammount(&self) -> f64 {
+        self.incoming
     }
     // pub fn get_金额大写(&self) -> &String {
     //     &self.金额大写
@@ -551,11 +581,11 @@ impl<'a> ToRow for &'a Incoming {
     fn to_row(&self) -> Row {
         row![
             self.date.as_ref(),
-            self.id as f64,
-            self.from_id.as_ref(),
+            self.id.to_string(),
             self.name.as_ref(),
+            self.from_id.as_ref(),
             self.from_name.as_ref(),
-            self.ammount,
+            self.incoming,
             self.usage.as_ref(),
             self.comment.as_ref(),
             self.postscript.as_ref()

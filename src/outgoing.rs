@@ -1,7 +1,11 @@
-use crate::{from_file::FromExcel, to_excel::ToRow};
-use calamine::{open_workbook, DataType, Reader, Xlsx};
-use simple_excel_writer::{row, Row};
-use std::path::Path;
+use crate::{
+    from_file::{FromExcel, FromFormatedExcel},
+    to_excel::{Columns, Header, SheetName, ToExcel, ToRow},
+};
+use calamine::{open_workbook_auto, DataType, Reader};
+use serde::{Deserialize, Serialize};
+use simple_excel_writer::{row, Column, Row};
+use std::{path::Path, slice::Iter, vec::IntoIter};
 
 #[derive(Debug, Default)]
 pub struct Outgoings(Vec<Outgoing>);
@@ -23,7 +27,7 @@ where
     P: AsRef<Path>,
 {
     fn from_excel(path: P) -> anyhow::Result<Self> {
-        let mut workbook: Xlsx<_> = open_workbook(path).unwrap();
+        let mut workbook = open_workbook_auto(path).unwrap();
         let worksheet = workbook
             .worksheet_range_at(0)
             .ok_or(anyhow::Error::msg("range err"))??;
@@ -37,23 +41,31 @@ where
             match row {
                 (
                     DataType::String(date),
-                    DataType::Float(id),
+                    DataType::String(id),
                     DataType::String(name),
-                    DataType::Float(outgoing),
+                    DataType::String(outgoing),
                 ) => {
                     temp = date.to_string();
-                    let outgoing =
-                        Outgoing::new(*id as u32, name.to_string(), temp.to_string(), *outgoing);
+                    let outgoing = Outgoing::new(
+                        ("102831264647".to_string() + &id).parse().unwrap(),
+                        name.to_string(),
+                        temp.to_string(),
+                        outgoing.parse().unwrap(),
+                    );
                     outgoings.as_mut().push(outgoing);
                 }
                 (
                     DataType::Empty,
-                    DataType::Float(id),
+                    DataType::String(id),
                     DataType::String(name),
-                    DataType::Float(outgoing),
+                    DataType::String(outgoing),
                 ) => {
-                    let outgoing =
-                        Outgoing::new(*id as u32, name.to_string(), temp.to_string(), *outgoing);
+                    let outgoing = Outgoing::new(
+                        ("102831264647".to_string() + &id).parse().unwrap(),
+                        name.to_string(),
+                        temp.to_string(),
+                        outgoing.parse().unwrap(),
+                    );
                     outgoings.as_mut().push(outgoing);
                 }
                 _ => println!("{row:?}"),
@@ -63,15 +75,77 @@ where
         Ok(outgoings)
     }
 }
-#[derive(Debug, Default)]
+impl<'a> IntoIterator for &'a Outgoings {
+    type Item = &'a Outgoing;
+
+    type IntoIter = Iter<'a, Outgoing>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.as_ref().iter()
+    }
+}
+impl IntoIterator for Outgoings {
+    type Item = Outgoing;
+
+    type IntoIter = IntoIter<Outgoing>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+impl<'a> Header for &'a Outgoings {
+    fn header(&self) -> Row {
+        row!["日期", "账户账号", "账户名称", "支出"]
+    }
+}
+impl<'a> SheetName for &'a Outgoings {
+    fn sheet_name(&self) -> &'static str {
+        "支出明细"
+    }
+}
+impl<'a> Columns for &'a Outgoings {
+    fn column(&self) -> Vec<simple_excel_writer::Column> {
+        vec![
+            Column { width: 30.0 },
+            Column { width: 30.0 },
+            Column { width: 30.0 },
+            Column { width: 30.0 },
+        ]
+    }
+}
+impl<'a> ToExcel for &'a Outgoings {}
+impl From<Vec<Outgoing>> for Outgoings {
+    fn from(v: Vec<Outgoing>) -> Self {
+        Self(v)
+    }
+}
+impl<P: std::convert::AsRef<std::path::Path>> FromFormatedExcel<'_, P> for Outgoings {}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Outgoing {
-    id: u32,
+    #[serde(rename = "账户账号")]
+    #[serde(deserialize_with = "de_opt_u64")]
+    id: u64,
+    #[serde(rename = "账户名称")]
     name: String,
+    #[serde(rename = "日期")]
     date: String,
+    #[serde(rename = "支出")]
     outgoing: f64,
 }
+fn de_opt_u64<'de, D>(deserializer: D) -> Result<u64, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let data_type = calamine::DataType::deserialize(deserializer);
+    match data_type {
+        Ok(calamine::DataType::String(s)) => Ok(s.parse().unwrap()),
+        _ => panic!("refund u64 parse error"),
+    }
+}
+
 impl Outgoing {
-    pub fn new(id: u32, name: String, date: String, outgoing: f64) -> Self {
+    pub fn new(id: u64, name: String, date: String, outgoing: f64) -> Self {
         Self {
             id,
             name,
@@ -79,7 +153,7 @@ impl Outgoing {
             outgoing,
         }
     }
-    pub fn get_id(&self) -> u32 {
+    pub fn get_id(&self) -> u64 {
         self.id
     }
     pub fn get_name(&self) -> &String {
@@ -92,12 +166,12 @@ impl Outgoing {
         self.outgoing
     }
 }
-impl ToRow for Outgoing {
+impl<'a> ToRow for &'a Outgoing {
     fn to_row(&self) -> Row {
         row![
-            self.id as f64,
-            self.get_name().as_str(),
-            self.get_date().as_str(),
+            self.date.as_ref(),
+            self.id.to_string(),
+            self.name.as_ref(),
             self.outgoing
         ]
     }
