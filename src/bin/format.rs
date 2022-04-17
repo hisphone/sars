@@ -10,8 +10,7 @@ use sub_account_reconcile_system::{
 };
 
 fn main() -> anyhow::Result<()> {
-    let mut path = std::env::current_exe()?;
-    path.pop();
+    let path = std::env::current_exe()?.parent().unwrap().to_path_buf();
 
     println!("开始读取{:?}", path.join("子账户信息.xls"));
     let sub_info = SubInfos::from_excel(&path.join("子账户信息.xls"))?;

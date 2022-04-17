@@ -1,4 +1,11 @@
-use std::{convert::Infallible, path::Path, slice::Iter, str::FromStr, vec::IntoIter};
+use std::{
+    convert::Infallible,
+    ops::{Deref, DerefMut},
+    path::Path,
+    slice::Iter,
+    str::FromStr,
+    vec::IntoIter,
+};
 
 use serde::{Deserialize, Serialize};
 use simple_excel_writer::{row, Column, Row};
@@ -32,14 +39,16 @@ impl<'a> Columns for &'a Balances {
 }
 impl<'a> ToExcel for &'a Balances {}
 
-impl AsRef<Vec<Balance>> for Balances {
-    fn as_ref(&self) -> &Vec<Balance> {
+impl Deref for Balances {
+    type Target = Vec<Balance>;
+
+    fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl AsMut<Vec<Balance>> for Balances {
-    fn as_mut(&mut self) -> &mut Vec<Balance> {
+impl DerefMut for Balances {
+    fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
@@ -50,7 +59,7 @@ impl<'a> IntoIterator for &'a Balances {
     type IntoIter = Iter<'a, Balance>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.as_ref().iter()
+        self.iter()
     }
 }
 impl IntoIterator for Balances {

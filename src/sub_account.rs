@@ -50,11 +50,7 @@ impl SubAccount {
                     Some(s) => s.get_start(),
                     None => 0.0,
                 };
-                let incoming_iter = self
-                    .get_incoming()
-                    .as_ref()
-                    .iter()
-                    .filter(|i| i.get_id() == id);
+                let incoming_iter = self.get_incoming().iter().filter(|i| i.get_id() == id);
                 let incoming = incoming_iter.clone().map(|i| i.get_ammount()).sum::<f64>();
                 let incomings = incoming_iter.map(|i| i.to_row()).collect::<Vec<_>>();
                 let outgoing_iter = self
@@ -73,14 +69,13 @@ impl SubAccount {
                 let refunds = refund_iter.map(|r| r.to_row()).collect::<Vec<_>>();
                 let balance = match self
                     .get_balance()
-                    .as_ref()
                     .iter()
                     .find(|balance| balance.get_id() == id)
                 {
                     Some(b) => b.get_balance(),
                     None => 0.0,
                 };
-                let balance_c = start + incoming - outgoing + refund;
+                let balance_c = start + incoming - outgoing - refund;
 
                 let mut wb = Workbook::create(
                     std::env::current_exe()
@@ -185,11 +180,63 @@ impl SubAccount {
                 })
                 .unwrap();
                 wb.close().expect("close excel error!");
-                (id, name, start + incoming - outgoing + refund, balance)
+                (
+                    id,
+                    name,
+                    start,
+                    incoming,
+                    outgoing,
+                    refund,
+                    start + incoming - outgoing - refund,
+                    balance,
+                )
             })
             .collect::<Vec<_>>();
 
-        println!("{a:#?}");
+        let mut wb = Workbook::create(
+            std::env::current_exe()
+                .unwrap()
+                .with_file_name("汇总.xlsx")
+                .to_str()
+                .unwrap(),
+        );
+        let mut sheet = wb.create_sheet("各单位汇总信息");
+        sheet.add_column(Column { width: 20.0 });
+        sheet.add_column(Column { width: 40.0 });
+        sheet.add_column(Column { width: 20.0 });
+        sheet.add_column(Column { width: 20.0 });
+        sheet.add_column(Column { width: 20.0 });
+        sheet.add_column(Column { width: 20.0 });
+        sheet.add_column(Column { width: 20.0 });
+        sheet.add_column(Column { width: 20.0 });
+        wb.write_sheet(&mut sheet, move |sheet_writer| {
+            let sw = sheet_writer;
+
+            sw.append_row(row![
+                "账户账号",
+                "账户名称",
+                "年初余额",
+                "入账",
+                "支出",
+                "退款",
+                "余额",
+                "实际余额"
+            ])?;
+            for row in a {
+                sw.append_row(row![
+                    row.0.to_string(),
+                    row.1.as_ref(),
+                    row.2,
+                    row.3,
+                    row.4,
+                    row.5,
+                    row.6,
+                    row.7
+                ])?;
+            }
+            Ok(())
+        })
+        .unwrap();
     }
     pub fn get_info(&self) -> &SubInfos {
         &self.info

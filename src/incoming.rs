@@ -1,7 +1,13 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use simple_excel_writer::{row, Column, Row};
-use std::{convert::Infallible, slice::Iter, str::FromStr, vec::IntoIter};
+use std::{
+    convert::Infallible,
+    ops::{Deref, DerefMut},
+    slice::Iter,
+    str::FromStr,
+    vec::IntoIter,
+};
 
 use crate::{
     from_file::{FromFormatedExcel, FromTxt, TxtReader},
@@ -95,14 +101,16 @@ impl<P> TxtReader<P> for Incomings where P: AsRef<std::path::Path> {}
 
 impl<P> FromTxt<P> for Incomings where P: AsRef<std::path::Path> {}
 
-impl AsRef<Vec<Incoming>> for Incomings {
-    fn as_ref(&self) -> &Vec<Incoming> {
+impl Deref for Incomings {
+    type Target = Vec<Incoming>;
+
+    fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl AsMut<Vec<Incoming>> for Incomings {
-    fn as_mut(&mut self) -> &mut Vec<Incoming> {
+impl DerefMut for Incomings {
+    fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
@@ -113,7 +121,7 @@ impl<'a> IntoIterator for &'a Incomings {
     type IntoIter = Iter<'a, Incoming>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.as_ref().iter()
+        self.0.iter()
     }
 }
 impl IntoIterator for Incomings {
