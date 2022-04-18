@@ -1,6 +1,6 @@
 use std::{path::Path, slice::Iter, vec::IntoIter};
 
-use calamine::{open_workbook_auto, RangeDeserializerBuilder, Reader};
+use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xls};
 use serde::{Deserialize, Serialize};
 use simple_excel_writer::{row, Column, Row};
 
@@ -29,7 +29,7 @@ where
     P: AsRef<Path>,
 {
     fn from_excel(path: P) -> anyhow::Result<Self> {
-        let mut workbook = open_workbook_auto(path).unwrap();
+        let mut workbook: Xls<_> = open_workbook(path).unwrap();
         let worksheet = workbook
             .worksheet_range_at(0)
             .ok_or(anyhow::Error::msg("range err"))??;

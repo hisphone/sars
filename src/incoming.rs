@@ -197,7 +197,19 @@ impl FromStr for Incomings {
             match line {
                 line if line.starts_with("客户号") => {
                     // incomings[index].set_客户号(line.split_once("：").unwrap().1.to_string());
-                    index += 1;
+                    if incomings[index].get_id().to_string() != "102831264647"
+                        || ![
+                            "2603020511100353522",
+                            "610620006156162700000000004",
+                            "26355101012001688",
+                        ]
+                        .contains(&incomings[index].get_from_id().as_str())
+                    {
+                        index += 1
+                    } else {
+                        incomings[index] = Incoming::default();
+                        incomings.pop();
+                    }
                 }
                 line if line.starts_with("日期") => {
                     incomings[index].set_date(line.split_once("：").unwrap().1.to_string());

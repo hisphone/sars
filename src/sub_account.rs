@@ -103,8 +103,7 @@ impl SubAccount {
                         "支出总计",
                         "退款总计",
                         "余额",
-                        "实际余额",
-                        "VA"
+                        "实际余额"
                     ])?;
                     sw.append_row(row![
                         id.to_string(),
@@ -114,8 +113,7 @@ impl SubAccount {
                         outgoing,
                         refund,
                         balance_c,
-                        balance,
-                        va.as_str()
+                        balance
                     ])?;
                     Ok(())
                 })
@@ -191,6 +189,7 @@ impl SubAccount {
                     refund,
                     start + incoming - outgoing - refund,
                     balance,
+                    va,
                 )
             })
             .collect::<Vec<_>>();
@@ -204,6 +203,7 @@ impl SubAccount {
         let mut sheet = wb.create_sheet("各单位汇总信息");
         sheet.add_column(Column { width: 20.0 });
         sheet.add_column(Column { width: 40.0 });
+        sheet.add_column(Column { width: 20.0 });
         sheet.add_column(Column { width: 20.0 });
         sheet.add_column(Column { width: 20.0 });
         sheet.add_column(Column { width: 20.0 });
@@ -232,7 +232,8 @@ impl SubAccount {
                     row.4,
                     row.5,
                     row.6,
-                    row.7
+                    row.7,
+                    row.8.as_ref()
                 ])?;
             }
             Ok(())
