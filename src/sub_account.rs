@@ -41,6 +41,7 @@ impl SubAccount {
             .map(|si| {
                 let id = si.get_id();
                 let name = si.get_name();
+                let va = si.get_va();
                 let start = match self
                     .get_start()
                     .as_ref()
@@ -76,7 +77,6 @@ impl SubAccount {
                     None => 0.0,
                 };
                 let balance_c = start + incoming - outgoing - refund;
-
                 let mut wb = Workbook::create(
                     std::env::current_exe()
                         .unwrap()
@@ -103,7 +103,8 @@ impl SubAccount {
                         "支出总计",
                         "退款总计",
                         "余额",
-                        "实际余额"
+                        "实际余额",
+                        "VA"
                     ])?;
                     sw.append_row(row![
                         id.to_string(),
@@ -113,7 +114,8 @@ impl SubAccount {
                         outgoing,
                         refund,
                         balance_c,
-                        balance
+                        balance,
+                        va.as_str()
                     ])?;
                     Ok(())
                 })
@@ -192,7 +194,6 @@ impl SubAccount {
                 )
             })
             .collect::<Vec<_>>();
-
         let mut wb = Workbook::create(
             std::env::current_exe()
                 .unwrap()
