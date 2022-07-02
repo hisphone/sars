@@ -79,7 +79,7 @@ impl FromStr for Balances {
     type Err = Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut balances = vec![Balance::default(); 444];
+        let mut balances = vec![Balance::default(); 445];
         let mut index = 0;
         let mut temp = String::new();
 
@@ -112,7 +112,7 @@ impl FromStr for Balances {
                 } else {
                     // balances[index].set_id((lines[0].strip_prefix("102831264647").unwrap().to_string() + &temp).parse().unwrap());
                     // balances[index].set_name(lines[1].to_string());
-                    // balances[index].set_ammount(lines[2].parse().unwrap());
+                    // balances[index].set_balance(lines[2].parse().unwrap());
                     // index += 1;
                     temp.clear();
                 }

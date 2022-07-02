@@ -102,8 +102,7 @@ impl SubAccount {
                         "入账总计",
                         "支出总计",
                         "退款总计",
-                        "余额",
-                        "实际余额"
+                        "余额"
                     ])?;
                     sw.append_row(row![
                         id.to_string(),
@@ -112,8 +111,7 @@ impl SubAccount {
                         incoming,
                         outgoing,
                         refund,
-                        balance_c,
-                        balance
+                        balance_c
                     ])?;
                     Ok(())
                 })
